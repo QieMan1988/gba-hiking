@@ -1,297 +1,567 @@
 # ============================================================
 # 脚本名称：GameManager
-# 功能描述：全局游戏管理器，负责游戏生命周期、状态管理、场景切换
-# 作者：Godot开发团队
-# 创建日期：2026-01-29
-# 最后修改：2026-01-29
-# 依赖项：SaveManager, UIManager, AudioManager
+# 功能描述：游戏主管理器 - 负责游戏流程控制、关卡管理、游戏状态
+# 版本号：v1.0
+# 创建日期：2026年1月30日
 # ============================================================
+
 extends Node
 
-## 全局游戏管理器
-##
-## 负责管理游戏的全局状态、生命周期、场景切换和核心流程
-## 作为AutoLoad单例在游戏启动时自动加载
-
 ## 信号定义
-signal game_started()
+signal game_started(level_config: Dictionary)
 signal game_paused()
 signal game_resumed()
-signal game_over(success: bool, reason: String)
-signal scene_changed(scene_name: String)
+signal game_completed(success: bool, result: Dictionary)
+signal level_changed(level_index: int)
+signal game_state_changed(new_state: GameState)
 
 ## 游戏状态枚举
 enum GameState {
 	MENU,           # 主菜单
-	BATTLE,         # 战斗场景
-	PAUSE,          # 暂停
+	LEVEL_SELECT,   # 关卡选择
+	PLAYING,        # 游戏进行中
+	PAUSED,         # 游戏暂停
+	COMPLETED,      # 关卡完成
 	GAME_OVER,      # 游戏结束
-	LOADING         # 加载中
+	SHOP            # 商店界面
 }
 
-## 全局变量
-var _current_state: GameState = GameState.MENU
-var _current_scene: Node = null
-var _current_level_id: int = 1
-var _is_paused: bool = false
+## 当前游戏状态
+var current_state: GameState = GameState.MENU
 
-## 游戏配置
-var _game_config: Dictionary = {
-	"version": "1.0.0",
-	"max_level_count": 10,
-	"save_slots": 3,
-	"enable_steam": true,
-	"enable_debug": false
-}
+## 当前关卡信息
+var current_level_index: int = 0
+var current_level_config: Dictionary = {}
+var current_play_count: int = 0
 
-## 运行时数据
-var _runtime_data: Dictionary = {
-	"play_time": 0,
-	"battle_count": 0,
-	"total_cards_crossed": 0,
-	"total_combo_count": 0
-}
+## 游戏统计
+var total_hiking_distance: float = 0.0  # 总徒步距离（公里）
+var total_elevation_gain: float = 0.0   # 总累积爬升（米）
+var total_hiking_points: int = 0        # 总徒步数
+var total_environmental_value: int = 0  # 总环保值
 
-## 初始化
+## 层级信息
+var current_layer_index: int = 0        # 当前层级
+var total_layers: int = 0               # 总层数
+var layer_distance_per: float = 2.0     # 每层距离（公里）
+
+## 地形信息
+var current_terrain_type: String = "flat"  # 当前地形类型
+var terrain_history: Array = []             # 地形历史记录
+
+## 天气信息
+var current_weather: String = "sunny"      # 当前天气
+var weather_duration: int = 0              # 天气持续回合数
+
+## 游戏配置引用
+var game_config: Dictionary = {}
+var balance_config: Dictionary = {}
+var card_database: Dictionary = {}
+
+## 性能统计
+var frame_count: int = 0
+var start_time: float = 0.0
+
+# ============================================================
+# 初始化
+# ============================================================
+
 func _ready() -> void:
+	print_debug("[GameManager] Initializing game manager...")
+	load_game_configs()
+	_initialize_signals()
+	start_time = Time.get_ticks_msec() / 1000.0
 	print_debug("[GameManager] Game manager initialized")
-	_load_game_config()
-	_initialize_systems()
-
-func _process(delta: float) -> void:
-	"""每帧更新"""
-	if not _is_paused and _current_state == GameState.BATTLE:
-		_runtime_data["play_time"] += delta
-
-## 公开方法
-
-## 初始化系统
-func _initialize_systems() -> void:
-	"""初始化各个系统"""
-	print_debug("[GameManager] Initializing systems...")
-	
-	# 初始化保存系统
-	SaveManager.initialize()
-	
-	# 初始化音频系统
-	AudioManager.initialize()
-	
-	# 初始化Steam系统
-	if _game_config.enable_steam:
-		SteamManager.initialize()
-	
-	print_debug("[GameManager] All systems initialized")
 
 ## 加载游戏配置
-func _load_game_config() -> void:
-	"""从配置文件加载游戏配置"""
-	var config_path = "res://config/game_config.json"
-	if FileAccess.file_exists(config_path):
-		var file = FileAccess.open(config_path, FileAccess.READ)
-		var json_string = file.get_as_text()
-		file.close()
-		
-		var json = JSON.new()
-		var error = json.parse(json_string)
-		if error == OK:
-			_game_config.merge(json.data, true)
-			print_debug("[GameManager] Game config loaded")
-		else:
-			push_error("[GameManager] Failed to parse game config: %s" % json.get_error_message())
-	else:
-		print_debug("[GameManager] Game config file not found, using defaults")
+func load_game_configs() -> void:
+	"""加载所有游戏配置文件"""
+	var config_loader = ConfigLoader.new()
+	
+	# 加载游戏配置
+	game_config = config_loader.load_config("res://config/game_config.json")
+	if game_config.is_empty():
+		push_error("[GameManager] Failed to load game_config.json")
+		_set_default_game_config()
+	
+	# 加载平衡配置
+	balance_config = config_loader.load_config("res://config/balance_config.json")
+	if balance_config.is_empty():
+		push_error("[GameManager] Failed to load balance_config.json")
+		_set_default_balance_config()
+	
+	# 加载卡牌数据库
+	card_database = config_loader.load_config("res://config/card_database.json")
+	if card_database.is_empty():
+		push_error("[GameManager] Failed to load card_database.json")
+	
+	print_debug("[GameManager] Game configurations loaded")
 
-## 场景管理
+## 设置默认游戏配置（配置文件不存在时使用）
+func _set_default_game_config() -> void:
+	game_config = {
+		"version": "1.0.0",
+		"initial_energy": 100,
+		"initial_hunger": 100,
+		"initial_thirst": 100,
+		"initial_fatigue": 0,
+		"max_energy": 100,
+		"min_energy": 0,
+		"layer_distance_per": 2.0,
+		"hiking_points_per_km": 2000,
+		"max_layers_per_level": 13,
+		"min_layers_per_level": 3
+	}
 
-## 切换场景
-func change_scene(scene_path: String) -> void:
-	"""切换到指定场景
-	
-	Args:
-		scene_path: 目标场景路径（如 "res://scenes/main_menu/Main_Menu.tscn"）
-	"""
-	print_debug("[GameManager] Changing scene to: %s" % scene_path)
-	
-	# 卸载当前场景
-	if _current_scene != null:
-		_current_scene.queue_free()
-	
-	# 加载新场景
-	var new_scene = load(scene_path)
-	if new_scene == null:
-		push_error("[GameManager] Failed to load scene: %s" % scene_path)
-		return
-	
-	_current_scene = new_scene.instantiate()
-	get_tree().root.add_child(_current_scene)
-	
-	# 更新游戏状态
-	var scene_name = scene_path.get_file().get_basename()
-	if scene_name == "Main_Menu":
-		_set_game_state(GameState.MENU)
-	elif scene_name == "Battle_Scene":
-		_set_game_state(GameState.BATTLE)
-	
-	emit_signal("scene_changed", scene_name)
-	print_debug("[GameManager] Scene changed successfully")
+## 设置默认平衡配置（配置文件不存在时使用）
+func _set_default_balance_config() -> void:
+	balance_config = {
+		"version": "1.0.0",
+		"terrain_weights": {
+			"flat": 0.4,
+			"gentle_up": 0.25,
+			"steep_up": 0.15,
+			"gentle_down": 0.12,
+			"steep_down": 0.05,
+			"cliff": 0.03
+		},
+		"weather_weights": {
+			"sunny": 0.4,
+			"cloudy": 0.25,
+			"rain": 0.15,
+			"hot": 0.12,
+			"typhoon": 0.08
+		},
+		"rest_required_per_5km": 1.0,
+		"supplies_required_per_10km": {
+			"water": 2,
+			"sports_drink": 1,
+			"chocolate": 1
+		}
+	}
 
-## 游戏状态管理
+## 初始化信号连接
+func _initialize_signals() -> void:
+	pass
 
-## 设置游戏状态
-func _set_game_state(state: GameState) -> void:
-	"""设置游戏状态
-	
-	Args:
-		state: 新的游戏状态
-	"""
-	_current_state = state
-	print_debug("[GameManager] Game state changed to: %s" % GameState.keys()[state])
+# ============================================================
+# 游戏流程控制
+# ============================================================
 
-## 获取当前游戏状态
-func get_game_state() -> GameState:
-	"""获取当前游戏状态
+## 启动游戏
+func start_game(level_config: Dictionary) -> void:
+	"""开始新游戏"""
+	print_debug("[GameManager] Starting game with level: %s" % level_config.get("name", "Unknown"))
 	
-	Returns:
-		GameState: 当前游戏状态
-	"""
-	return _current_state
+	# 设置关卡配置
+	current_level_config = level_config
+	current_level_index = level_config.get("level_id", 0)
+	total_layers = level_config.get("layers", 5)
+	
+	# 初始化层级
+	current_layer_index = 0
+	
+	# 生成地形序列
+	_generate_terrain_sequence()
+	
+	# 初始化天气
+	_generate_initial_weather()
+	
+	# 初始化属性系统
+	AttributeSystem.initialize()
+	
+	# 初始化卡牌系统
+	CardSystem.initialize()
+	
+	# 初始化经济系统
+	EconomySystem.initialize()
+	
+	# 初始化连击系统
+	ComboSystem.initialize()
+	
+	# 初始化UI
+	UIManager.show_battle_scene()
+	
+	# 改变游戏状态
+	change_state(GameState.PLAYING)
+	
+	# 发送信号
+	game_started.emit(level_config)
+	
+	print_debug("[GameManager] Game started")
 
 ## 暂停游戏
 func pause_game() -> void:
 	"""暂停游戏"""
-	if _current_state == GameState.BATTLE and not _is_paused:
-		_is_paused = true
-		_set_game_state(GameState.PAUSE)
+	if current_state == GameState.PLAYING:
+		change_state(GameState.PAUSED)
 		get_tree().paused = true
-		emit_signal("game_paused")
+		game_paused.emit()
 		print_debug("[GameManager] Game paused")
 
 ## 恢复游戏
 func resume_game() -> void:
 	"""恢复游戏"""
-	if _is_paused:
-		_is_paused = false
-		_set_game_state(GameState.BATTLE)
+	if current_state == GameState.PAUSED:
+		change_state(GameState.PLAYING)
 		get_tree().paused = false
-		emit_signal("game_resumed")
+		game_resumed.emit()
 		print_debug("[GameManager] Game resumed")
 
-## 开始新游戏
-func start_new_game() -> void:
-	"""开始新游戏"""
-	print_debug("[GameManager] Starting new game...")
+## 完成关卡
+func complete_level(success: bool, result: Dictionary) -> void:
+	"""完成关卡（成功或失败）"""
+	print_debug("[GameManager] Level completed: %s" % success)
 	
-	# 重置运行时数据
-	_runtime_data = {
-		"play_time": 0,
-		"battle_count": 0,
-		"total_cards_crossed": 0,
-		"total_combo_count": 0
-	}
+	# 统计游戏数据
+	_update_game_statistics(result)
 	
-	# 初始化系统
-	CardSystem.initialize()
-	AttributeSystem.initialize()
-	ComboSystem.initialize()
-	EconomySystem.initialize()
+	# 改变游戏状态
+	if success:
+		change_state(GameState.COMPLETED)
+	else:
+		change_state(GameState.GAME_OVER)
 	
-	# 切换到战斗场景
-	change_scene("res://scenes/battle/Battle_Scene.tscn")
-	emit_signal("game_started")
+	# 发送信号
+	game_completed.emit(success, result)
+	
+	# 显示结果界面
+	UIManager.show_result_screen(success, result)
 
-## 结束游戏
-func end_game(success: bool, reason: String) -> void:
-	"""结束游戏
+## 重新开始
+func restart_game() -> void:
+	"""重新开始当前关卡"""
+	print_debug("[GameManager] Restarting game...")
+	start_game(current_level_config)
+
+## 返回主菜单
+func return_to_menu() -> void:
+	"""返回主菜单"""
+	print_debug("[GameManager] Returning to menu...")
+	change_state(GameState.MENU)
+	UIManager.show_main_menu()
+
+# ============================================================
+# 关卡管理
+# ============================================================
+
+## 生成地形序列
+func _generate_terrain_sequence() -> void:
+	"""生成关卡的地形序列（上坡下坡）"""
+	terrain_history.clear()
 	
-	Args:
-		success: 是否成功
-		reason: 结束原因
-	"""
-	_set_game_state(GameState.GAME_OVER)
-	emit_signal("game_over", success, reason)
+	var target_elevation_gain: float = current_level_config.get("elevation_gain", 0.0)
+	var layers: int = current_level_config.get("layers", 5)
+	var avg_gain_per_layer: float = target_elevation_gain / float(layers)
 	
-	print_debug("[GameManager] Game ended - Success: %s, Reason: %s" % [success, reason])
+	for i in range(layers):
+		var terrain_type: String = _determine_terrain_type(i, layers, avg_gain_per_layer)
+		terrain_history.append(terrain_type)
+	
+	print_debug("[GameManager] Terrain sequence generated: %s" % terrain_history)
+
+## 确定地形类型
+func _determine_terrain_type(layer_index: int, total_layers: int, avg_gain_per_layer: float) -> String:
+	"""确定特定层级的地形类型"""
+	var rand = randf()
+	
+	# 最后一层总是上坡到山顶
+	if layer_index == total_layers - 1:
+		if avg_gain_per_layer < 100:
+			return "gentle_up"
+		else:
+			return "steep_up"
+	
+	# 第一层通常是平坦道路
+	if layer_index == 0:
+		return "flat"
+	
+	# 根据平均爬升确定地形
+	var weights = balance_config.get("terrain_weights", {})
+	
+	# 如果平均爬升很高，增加上坡权重
+	if avg_gain_per_layer > 200:
+		weights["gentle_up"] *= 1.5
+		weights["steep_up"] *= 2.0
+		weights["flat"] *= 0.7
+		weights["gentle_down"] *= 0.5
+		weights["steep_down"] *= 0.3
+	elif avg_gain_per_layer < 50:
+		weights["gentle_up"] *= 0.7
+		weights["steep_up"] *= 0.3
+		weights["flat"] *= 1.5
+		weights["gentle_down"] *= 1.2
+		weights["steep_down"] *= 0.8
+	
+	# 根据权重随机选择
+	var total_weight = 0.0
+	for weight in weights.values():
+		total_weight += weight
+	
+	var random_value = rand * total_weight
+	var cumulative_weight = 0.0
+	
+	for terrain_type in weights:
+		cumulative_weight += weights[terrain_type]
+		if random_value <= cumulative_weight:
+			return terrain_type
+	
+	return "flat"
+
+## 生成初始天气
+func _generate_initial_weather() -> void:
+	"""生成关卡初始天气"""
+	var weights = balance_config.get("weather_weights", {})
+	
+	var total_weight = 0.0
+	for weight in weights.values():
+		total_weight += weight
+	
+	var random_value = randf() * total_weight
+	var cumulative_weight = 0.0
+	
+	for weather_type in weights:
+		cumulative_weight += weights[weather_type]
+		if random_value <= cumulative_weight:
+			current_weather = weather_type
+			break
+	
+	weather_duration = randi_range(3, 6)
+	
+	print_debug("[GameManager] Initial weather: %s (duration: %d)" % [current_weather, weather_duration])
+
+## 更新天气
+func update_weather() -> void:
+	"""每回合更新天气"""
+	weather_duration -= 1
+	
+	if weather_duration <= 0:
+		var weights = balance_config.get("weather_weights", {})
+		
+		# 相同天气有50%概率延续
+		if randf() < 0.5:
+			weather_duration = randi_range(3, 6)
+			return
+		
+		# 否则随机更换
+		var total_weight = 0.0
+		for weight in weights.values():
+			total_weight += weight
+		
+		var random_value = randf() * total_weight
+		var cumulative_weight = 0.0
+		
+		for weather_type in weights:
+			cumulative_weight += weights[weather_type]
+			if random_value <= cumulative_weight:
+				current_weather = weather_type
+				break
+		
+		weather_duration = randi_range(3, 6)
+	
+	print_debug("[GameManager] Weather updated: %s (duration: %d)" % [current_weather, weather_duration])
+
+## 进入下一层
+func advance_to_next_layer() -> void:
+	"""进入下一层级"""
+	if current_layer_index < total_layers - 1:
+		current_layer_index += 1
+		current_terrain_type = terrain_history[current_layer_index]
+		
+		# 检查是否到达山顶
+		if current_layer_index == total_layers - 1:
+			complete_level(true, _get_level_result())
+		else:
+			level_changed.emit(current_layer_index)
+		
+		print_debug("[GameManager] Advanced to layer %d/%d" % [current_layer_index, total_layers])
+
+## 获取当前层级信息
+func get_current_layer_info() -> Dictionary:
+	"""获取当前层级的详细信息"""
+	var layer_index = current_layer_index
+	
+	return {
+		"layer_index": layer_index,
+		"total_layers": total_layers,
+		"terrain_type": current_terrain_type,
+		"distance_so_far": (layer_index + 1) * layer_distance_per,
+		"total_distance": total_layers * layer_distance_per,
+		"is_summit": layer_index == total_layers - 1,
+		"is_start": layer_index == 0
+	}
+
+# ============================================================
+# 游戏状态管理
+# ============================================================
+
+## 改变游戏状态
+func change_state(new_state: GameState) -> void:
+	"""改变游戏状态"""
+	if current_state != new_state:
+		var old_state = current_state
+		current_state = new_state
+		game_state_changed.emit(new_state)
+		print_debug("[GameManager] State changed: %s -> %s" % [GameState.keys()[old_state], GameState.keys()[new_state]])
+
+## 获取当前状态
+func get_current_state() -> GameState:
+	"""获取当前游戏状态"""
+	return current_state
+
+## 检查是否在特定状态
+func is_in_state(state: GameState) -> bool:
+	"""检查游戏是否在特定状态"""
+	return current_state == state
+
+# ============================================================
+# 游戏统计
+# ============================================================
+
+## 更新游戏统计
+func _update_game_statistics(result: Dictionary) -> void:
+	"""更新游戏统计数据"""
+	# 更新总徒步距离
+	var distance = result.get("distance", 0.0)
+	total_hiking_distance += distance
+	
+	# 更新总累积爬升
+	var elevation_gain = result.get("elevation_gain", 0.0)
+	total_elevation_gain += elevation_gain
+	
+	# 更新总徒步数
+	var hiking_points = result.get("hiking_points", 0)
+	total_hiking_points += hiking_points
+	
+	# 更新总环保值
+	var env_value = result.get("environmental_value", 0)
+	total_environmental_value += env_value
+	
+	# 更新游玩次数
+	current_play_count += 1
 	
 	# 保存统计数据
-	_save_runtime_data()
+	SaveManager.save_player_data()
 	
-	# 显示结算界面
-	UIManager.show_game_over(success, reason)
+	print_debug("[GameManager] Game statistics updated: distance=%.2fkm, elevation=%.0fm, points=%d, env=%d" % [
+		total_hiking_distance, total_elevation_gain, total_hiking_points, total_environmental_value
+	])
 
-## 关卡管理
-
-## 设置当前关卡
-func set_current_level(level_id: int) -> void:
-	"""设置当前关卡
-	
-	Args:
-		level_id: 关卡ID
-	"""
-	_current_level_id = level_id
-	print_debug("[GameManager] Current level set to: %d" % level_id)
-
-## 获取当前关卡
-func get_current_level() -> int:
-	"""获取当前关卡ID
-	
-	Returns:
-		int: 当前关卡ID
-	"""
-	return _current_level_id
-
-## 数据获取
-
-## 获取游戏配置
-func get_config() -> Dictionary:
-	"""获取游戏配置
-	
-	Returns:
-		Dictionary: 游戏配置字典
-	"""
-	return _game_config.duplicate()
-
-## 获取运行时数据
-func get_runtime_data() -> Dictionary:
-	"""获取运行时数据
-	
-	Returns:
-		Dictionary: 运行时数据字典
-	"""
-	return _runtime_data.duplicate()
-
-## 更新运行时数据
-func update_runtime_data(key: String, value) -> void:
-	"""更新运行时数据
-	
-	Args:
-		key: 数据键
-		value: 数据值
-	"""
-	_runtime_data[key] = value
-
-## 私有方法
-
-## 保存运行时数据
-func _save_runtime_data() -> void:
-	"""保存运行时数据到存档"""
-	var save_data = {
-		"slot_id": 0,
-		"runtime_data": _runtime_data,
-		"timestamp": Time.get_unix_time_from_system()
+## 获取关卡结果
+func _get_level_result() -> Dictionary:
+	"""获取关卡结果数据"""
+	return {
+		"level_id": current_level_index,
+		"success": true,
+		"distance": current_level_index * layer_distance_per,
+		"elevation_gain": _calculate_total_elevation_gain(),
+		"hiking_points": int(current_level_index * layer_distance_per * game_config.get("hiking_points_per_km", 2000)),
+		"environmental_value": EconomySystem.get_environmental_value(),
+		"layers_completed": current_layer_index + 1,
+		"total_layers": total_layers,
+		"play_count": current_play_count
 	}
-	SaveManager.save_game(save_data)
 
-## 退出游戏
-func quit_game() -> void:
-	"""退出游戏"""
-	print_debug("[GameManager] Quitting game...")
+## 计算总累积爬升
+func _calculate_total_elevation_gain() -> float:
+	"""计算当前关卡的总累积爬升"""
+	var total_gain = 0.0
 	
-	# 保存游戏
-	if _current_state == GameState.BATTLE:
-		_save_runtime_data()
+	for terrain_type in terrain_history:
+		if terrain_type in ["gentle_up", "steep_up", "cliff"]:
+			if terrain_type == "gentle_up":
+				total_gain += 50.0
+			elif terrain_type == "steep_up":
+				total_gain += 150.0
+			elif terrain_type == "cliff":
+				total_gain += 300.0
 	
-	# 关闭Steam
-	if _game_config.enable_steam:
-		SteamManager.shutdown()
+	return total_gain
+
+## 获取游戏统计数据
+func get_game_statistics() -> Dictionary:
+	"""获取游戏统计数据"""
+	return {
+		"total_hiking_distance": total_hiking_distance,
+		"total_elevation_gain": total_elevation_gain,
+		"total_hiking_points": total_hiking_points,
+		"total_environmental_value": total_environmental_value,
+		"current_play_count": current_play_count,
+		"highest_level": SaveManager.get_highest_level()
+	}
+
+# ============================================================
+# 工具函数
+# ============================================================
+
+## 获取配置
+func get_game_config(key: String, default_value = null):
+	"""获取游戏配置"""
+	return game_config.get(key, default_value)
+
+## 获取平衡配置
+func get_balance_config(key: String, default_value = null):
+	"""获取平衡配置"""
+	return balance_config.get(key, default_value)
+
+## 获取卡牌数据库
+func get_card_database() -> Dictionary:
+	"""获取卡牌数据库"""
+	return card_database
+
+## 获取特定卡牌信息
+func get_card_info(card_id: String) -> Dictionary:
+	"""获取特定卡牌的信息"""
+	return card_database.get(card_id, {})
+
+## 计算体能消耗
+func calculate_energy_cost(distance: float, elevation_gain: float) -> float:
+	"""根据徒步距离和累积爬升计算体能消耗"""
+	var cost = (distance / 20.0) + (elevation_gain / 20.0)
+	return max(cost, 0)
+
+## 计算徒步数奖励
+func calculate_hiking_points_reward(distance: float, elevation_gain: float) -> int:
+	"""计算徒步数奖励"""
+	var points_per_km = game_config.get("hiking_points_per_km", 2000)
+	var distance_points = int(distance * points_per_km)
+	var elevation_points = int(elevation_gain * 5)  # 每米爬升5点
+	return distance_points + elevation_points
+
+# ============================================================
+# 进程
+# ============================================================
+
+func _process(delta: float) -> void:
+	frame_count += 1
+	if frame_count % 60 == 0:
+		# 每秒更新一次统计数据
+		pass
+
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_WM_CLOSE_REQUEST:
+		# 游戏关闭前保存
+		SaveManager.save_player_data()
+		get_tree().quit()
+
+## 配置加载器（内部类）
+class ConfigLoader:
 	
-	get_tree().quit()
+	func load_config(file_path: String) -> Dictionary:
+		"""加载配置文件"""
+		if not FileAccess.file_exists(file_path):
+			print_debug("[ConfigLoader] Config file not found: %s" % file_path)
+			return {}
+		
+		var file = FileAccess.open(file_path, FileAccess.READ)
+		var json_text = file.get_as_text()
+		file.close()
+		
+		var json = JSON.new()
+		var error = json.parse(json_text)
+		
+		if error != OK:
+			print_debug("[ConfigLoader] JSON parse error: %s" % json.get_error_message())
+			return {}
+		
+		return json.data
