@@ -1,5 +1,120 @@
 {
   "version": "1.0.0",
   "last_updated": "2026-01-29",
-  "note": "完整数据已在对话中生成。请从对话中复制完整的game_config.json内容到此处。"
+  "game_info": {
+    "name": "大湾区徒步",
+    "name_en": "Greater Bay Area Hiking",
+    "description": "以大湾区地理文化为背景的登山式消除卡牌游戏",
+    "author": "Godot开发团队",
+    "release_date": "2026-06-01"
+  },
+  "system": {
+    "target_fps": 60,
+    "max_fps": 144,
+    "vsync": true,
+    "physics_fps": 60
+  },
+  "display": {
+    "resolution": {
+      "width": 1920,
+      "height": 1080,
+      "fullscreen": false,
+      "borderless": false,
+      "resizable": true
+    },
+    "quality": {
+      "antialiasing": "MSAA 2x",
+      "shadows": "Medium",
+      "textures": "High",
+      "effects": "Medium"
+    }
+  },
+  "audio": {
+    "master_volume": 1.0,
+    "music_volume": 0.8,
+    "sfx_volume": 1.0,
+    "voice_volume": 0.9,
+    "enable_music": true,
+    "enable_sfx": true,
+    "enable_voice": true
+  },
+  "gameplay": {
+    "max_level_count": 10,
+    "save_slots": 3,
+    "auto_save_enabled": true,
+    "auto_save_interval": 60.0,
+    "pause_on_focus_lost": true,
+    "show_tutorial": true,
+    "language": "zh_CN"
+  },
+  "controls": {
+    "keyboard": {
+      "ui_left": "Left",
+      "ui_right": "Right",
+      "ui_up": "Up",
+      "ui_down": "Down",
+      "ui_accept": "Enter",
+      "ui_cancel": "Escape",
+      "ui_pause": "P"
+    },
+    "gamepad": {
+      "ui_left": "gamepad_dpad_left",
+      "ui_right": "gamepad_dpad_right",
+      "ui_up": "gamepad_dpad_up",
+      "ui_down": "gamepad_dpad_down",
+      "ui_accept": "gamepad_button_0",
+      "ui_cancel": "gamepad_button_1",
+      "ui_pause": "gamepad_button_9"
+    }
+  },
+  "steam": {
+    "enabled": true,
+    "app_id": 0,
+    "enable_achievements": true,
+    "enable_leaderboards": true,
+    "enable_cloud": true,
+    "enable_stats": true
+  },
+  "performance": {
+    "object_pooling_enabled": true,
+    "card_pool_size": 50,
+    "particle_pool_size": 100,
+    "texture_streaming": true,
+    "lod_enabled": true,
+    "monitor_fps": true
+  },
+  "debug": {
+    "enable_debug_mode": false,
+    "show_fps": false,
+    "show_debug_info": false,
+    "enable_cheats": false,
+    "log_level": "WARNING"
+  },
+  "network": {
+    "enable_multiplayer": false,
+    "enable_leaderboards": true,
+    "enable_cloud_sync": true,
+    "check_for_updates": true
+  },
+  "localization": {
+    "default_language": "zh_CN",
+    "supported_languages": [
+      "zh_CN",
+      "zh_TW",
+      "en_US"
+    ],
+    "auto_detect": true
+  },
+  "accessibility": {
+    "enable_high_contrast": false,
+    "enable_colorblind_mode": false,
+    "enable_screen_reader": false,
+    "subtitles_enabled": true,
+    "font_size": 1.0
+  },
+  "privacy": {
+    "enable_analytics": true,
+    "enable_crash_reports": true,
+    "data_collection_consent": false
+  }
 }

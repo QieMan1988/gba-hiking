@@ -1,5 +1,182 @@
 {
   "version": "1.0",
   "last_updated": "2026-01-29",
-  "note": "完整数据已在对话中生成。请从对话中复制完整的balance_config.json内容到此处。"
+  "attributes": {
+    "energy": {
+      "base": 100.0,
+      "max": 100.0,
+      "description": "玩家体能，穿越卡牌时消耗"
+    },
+    "backpack": {
+      "base": 20.0,
+      "max": 50.0,
+      "description": "背包容量，限制可携带物品数量"
+    },
+    "endurance": {
+      "base": 100.0,
+      "max": 100.0,
+      "description": "耐力，影响长期徒步能力"
+    },
+    "speed": {
+      "base": 1.0,
+      "max": 2.0,
+      "description": "速度，影响穿越效率"
+    },
+    "heart_rate": {
+      "base": 60.0,
+      "max": 200.0,
+      "description": "心率，反映运动强度"
+    }
+  },
+  "card_balance": {
+    "energy_cost": {
+      "base": 10.0,
+      "type_multipliers": {
+        "scenery": 0.5,
+        "terrain": 1.5,
+        "resource": 0.3,
+        "environment": 0.8,
+        "photo": 0.0
+      },
+      "tier_multipliers": {
+        "1": 1.0,
+        "2": 1.2,
+        "3": 1.5,
+        "4": 1.8,
+        "5": 2.2
+      }
+    },
+    "effects": {
+      "restore_energy": {
+        "base_value": 10.0,
+        "tier_multipliers": {
+          "1": 1.0,
+          "2": 1.5,
+          "3": 2.0,
+          "4": 2.5,
+          "5": 3.0
+        }
+      },
+      "gain_hiking_number": {
+        "base_value": 5.0,
+        "tier_multipliers": {
+          "1": 1.0,
+          "2": 1.5,
+          "3": 2.0,
+          "4": 2.5,
+          "5": 3.0
+        }
+      },
+      "gain_altitude_number": {
+        "base_value": 20.0,
+        "tier_multipliers": {
+          "1": 1.0,
+          "2": 1.5,
+          "3": 2.0,
+          "4": 2.5,
+          "5": 3.0
+        }
+      },
+      "gain_eco_value": {
+        "base_value": 10.0,
+        "tier_multipliers": {
+          "1": 1.0,
+          "2": 1.5,
+          "3": 2.0,
+          "4": 2.5,
+          "5": 3.0
+        }
+      }
+    }
+  },
+  "combo_balance": {
+    "combo_timeout": 3.0,
+    "max_combo_multiplier": 2.0,
+    "combo_bonus_multiplier": 0.1,
+    "combo_rewards": {
+      "3": {
+        "type": "restore_energy",
+        "base_value": 5.0
+      },
+      "5": {
+        "type": "gain_hiking_number",
+        "base_value": 10.0
+      },
+      "10": {
+        "type": "gain_eco_value",
+        "base_value": 15.0
+      }
+    }
+  },
+  "level_balance": {
+    "early": {
+      "terrain_obstacle_rate": 0.15,
+      "energy_requirement_multiplier": 0.8,
+      "card_tier_max": 2,
+      "weather_effects": {
+        "sunny": 1.0,
+        "cloudy": 0.9
+      }
+    },
+    "mid": {
+      "terrain_obstacle_rate": 0.20,
+      "energy_requirement_multiplier": 1.0,
+      "card_tier_max": 3,
+      "weather_effects": {
+        "sunny": 1.0,
+        "cloudy": 0.9,
+        "high_temp": 1.2
+      }
+    },
+    "late": {
+      "terrain_obstacle_rate": 0.25,
+      "energy_requirement_multiplier": 1.2,
+      "card_tier_max": 4,
+      "weather_effects": {
+        "sunny": 1.0,
+        "cloudy": 0.9,
+        "high_temp": 1.2,
+        "typhoon": 1.3
+      }
+    },
+    "boss": {
+      "terrain_obstacle_rate": 0.25,
+      "energy_requirement_multiplier": 1.5,
+      "card_tier_max": 5,
+      "weather_effects": {
+        "sunny": 1.0
+      }
+    }
+  },
+  "economy_balance": {
+    "hiking_number": {
+      "description": "基础货币，通过卡牌穿越获得",
+      "initial_amount": 0.0,
+      "gain_rate": 1.0
+    },
+    "altitude_number": {
+      "description": "特殊货币，通过挑战路线获得",
+      "initial_amount": 0.0,
+      "gain_rate": 1.0
+    },
+    "eco_value": {
+      "description": "升级货币，通过连击和通关获得",
+      "initial_amount": 0.0,
+      "gain_rate": 1.0
+    }
+  },
+  "difficulty_progression": {
+    "play_count_modifier": 0.01,
+    "max_modifier": 1.5,
+    "attributes": {
+      "energy_base": {
+        "level_1": 100.0,
+        "level_3": 110.0,
+        "level_5": 120.0,
+        "level_7": 130.0,
+        "level_9": 140.0,
+        "level_10": 150.0
+      }
+    }
+  }
 }

@@ -2,6 +2,596 @@
   "version": "1.0",
   "last_updated": "2026-01-29",
   "levels": {
-    "note": "完整数据已在对话中生成，包含10个关卡配置。请从对话中复制完整的level_config.json内容到此处。"
+    "1": {
+      "id": 1,
+      "name": "澳门塔",
+      "phase": "early",
+      "total_layers": 5,
+      "altitude_start": 220,
+      "altitude_step": 30,
+      "layers": [
+        {
+          "layer_index": 1,
+          "card_count": 4,
+          "altitude": 220,
+          "background": "res://resources/textures/backgrounds/macau_tower_layer1.png"
+        },
+        {
+          "layer_index": 2,
+          "card_count": 3,
+          "altitude": 250,
+          "background": "res://resources/textures/backgrounds/macau_tower_layer2.png"
+        },
+        {
+          "layer_index": 3,
+          "card_count": 3,
+          "altitude": 280,
+          "background": "res://resources/textures/backgrounds/macau_tower_layer3.png"
+        },
+        {
+          "layer_index": 4,
+          "card_count": 2,
+          "altitude": 310,
+          "background": "res://resources/textures/backgrounds/macau_tower_layer4.png"
+        },
+        {
+          "layer_index": 5,
+          "card_count": 1,
+          "altitude": 340,
+          "background": "res://resources/textures/backgrounds/macau_tower_layer5.png",
+          "is_summit": true,
+          "reward_card_id": 5001
+        }
+      ],
+      "weather": {
+        "type": "sunny",
+        "effects": {
+          "temperature_mod": 1.0,
+          "visibility_mod": 1.0
+        }
+      },
+      "terrain_obstacle_rate": 0.15,
+      "required_energy": 80
+    },
+    "2": {
+      "id": 2,
+      "name": "太平山顶",
+      "phase": "early",
+      "total_layers": 5,
+      "altitude_start": 400,
+      "altitude_step": 30,
+      "layers": [
+        {
+          "layer_index": 1,
+          "card_count": 4,
+          "altitude": 400,
+          "background": "res://resources/textures/backgrounds/victoria_peak_layer1.png"
+        },
+        {
+          "layer_index": 2,
+          "card_count": 3,
+          "altitude": 430,
+          "background": "res://resources/textures/backgrounds/victoria_peak_layer2.png"
+        },
+        {
+          "layer_index": 3,
+          "card_count": 3,
+          "altitude": 460,
+          "background": "res://resources/textures/backgrounds/victoria_peak_layer3.png"
+        },
+        {
+          "layer_index": 4,
+          "card_count": 2,
+          "altitude": 490,
+          "background": "res://resources/textures/backgrounds/victoria_peak_layer4.png"
+        },
+        {
+          "layer_index": 5,
+          "card_count": 1,
+          "altitude": 520,
+          "background": "res://resources/textures/backgrounds/victoria_peak_layer5.png",
+          "is_summit": true,
+          "reward_card_id": 5002
+        }
+      ],
+      "weather": {
+        "type": "cloudy",
+        "effects": {
+          "temperature_mod": 0.9,
+          "visibility_mod": 0.95
+        }
+      },
+      "terrain_obstacle_rate": 0.17,
+      "required_energy": 85
+    },
+    "3": {
+      "id": 3,
+      "name": "白云山",
+      "phase": "early",
+      "total_layers": 5,
+      "altitude_start": 380,
+      "altitude_step": 30,
+      "layers": [
+        {
+          "layer_index": 1,
+          "card_count": 4,
+          "altitude": 380,
+          "background": "res://resources/textures/backgrounds/baiyun_mountain_layer1.png"
+        },
+        {
+          "layer_index": 2,
+          "card_count": 3,
+          "altitude": 410,
+          "background": "res://resources/textures/backgrounds/baiyun_mountain_layer2.png"
+        },
+        {
+          "layer_index": 3,
+          "card_count": 3,
+          "altitude": 440,
+          "background": "res://resources/textures/backgrounds/baiyun_mountain_layer3.png"
+        },
+        {
+          "layer_index": 4,
+          "card_count": 2,
+          "altitude": 470,
+          "background": "res://resources/textures/backgrounds/baiyun_mountain_layer4.png"
+        },
+        {
+          "layer_index": 5,
+          "card_count": 1,
+          "altitude": 500,
+          "background": "res://resources/textures/backgrounds/baiyun_mountain_layer5.png",
+          "is_summit": true,
+          "reward_card_id": 5003
+        }
+      ],
+      "weather": {
+        "type": "sunny",
+        "effects": {
+          "temperature_mod": 1.0,
+          "visibility_mod": 1.0
+        }
+      },
+      "terrain_obstacle_rate": 0.18,
+      "required_energy": 90
+    },
+    "4": {
+      "id": 4,
+      "name": "广州塔",
+      "phase": "mid",
+      "total_layers": 7,
+      "altitude_start": 450,
+      "altitude_step": 30,
+      "layers": [
+        {
+          "layer_index": 1,
+          "card_count": 4,
+          "altitude": 450
+        },
+        {
+          "layer_index": 2,
+          "card_count": 4,
+          "altitude": 480
+        },
+        {
+          "layer_index": 3,
+          "card_count": 4,
+          "altitude": 510
+        },
+        {
+          "layer_index": 4,
+          "card_count": 4,
+          "altitude": 540
+        },
+        {
+          "layer_index": 5,
+          "card_count": 3,
+          "altitude": 570
+        },
+        {
+          "layer_index": 6,
+          "card_count": 2,
+          "altitude": 600
+        },
+        {
+          "layer_index": 7,
+          "card_count": 1,
+          "altitude": 630,
+          "is_summit": true,
+          "reward_card_id": 1002
+        }
+      ],
+      "weather": {
+        "type": "high_temp",
+        "effects": {
+          "temperature_mod": 1.2,
+          "visibility_mod": 0.9
+        }
+      },
+      "terrain_obstacle_rate": 0.20,
+      "required_energy": 100
+    },
+    "5": {
+      "id": 5,
+      "name": "深圳中心公园",
+      "phase": "mid",
+      "total_layers": 7,
+      "altitude_start": 180,
+      "altitude_step": 25,
+      "layers": [
+        {
+          "layer_index": 1,
+          "card_count": 4,
+          "altitude": 180
+        },
+        {
+          "layer_index": 2,
+          "card_count": 4,
+          "altitude": 205
+        },
+        {
+          "layer_index": 3,
+          "card_count": 4,
+          "altitude": 230
+        },
+        {
+          "layer_index": 4,
+          "card_count": 4,
+          "altitude": 255
+        },
+        {
+          "layer_index": 5,
+          "card_count": 3,
+          "altitude": 280
+        },
+        {
+          "layer_index": 6,
+          "card_count": 2,
+          "altitude": 305
+        },
+        {
+          "layer_index": 7,
+          "card_count": 1,
+          "altitude": 330,
+          "is_summit": true
+        }
+      ],
+      "weather": {
+        "type": "cloudy",
+        "effects": {
+          "temperature_mod": 0.9,
+          "visibility_mod": 0.95
+        }
+      },
+      "terrain_obstacle_rate": 0.22,
+      "required_energy": 105
+    },
+    "6": {
+      "id": 6,
+      "name": "珠海情侣路",
+      "phase": "mid",
+      "total_layers": 7,
+      "altitude_start": 200,
+      "altitude_step": 25,
+      "layers": [
+        {
+          "layer_index": 1,
+          "card_count": 4,
+          "altitude": 200
+        },
+        {
+          "layer_index": 2,
+          "card_count": 4,
+          "altitude": 225
+        },
+        {
+          "layer_index": 3,
+          "card_count": 4,
+          "altitude": 250
+        },
+        {
+          "layer_index": 4,
+          "card_count": 4,
+          "altitude": 275
+        },
+        {
+          "layer_index": 5,
+          "card_count": 3,
+          "altitude": 300
+        },
+        {
+          "layer_index": 6,
+          "card_count": 2,
+          "altitude": 325
+        },
+        {
+          "layer_index": 7,
+          "card_count": 1,
+          "altitude": 350,
+          "is_summit": true
+        }
+      ],
+      "weather": {
+        "type": "sunny",
+        "effects": {
+          "temperature_mod": 1.0,
+          "visibility_mod": 1.0
+        }
+      },
+      "terrain_obstacle_rate": 0.23,
+      "required_energy": 110
+    },
+    "7": {
+      "id": 7,
+      "name": "东澳岛",
+      "phase": "late",
+      "total_layers": 9,
+      "altitude_start": 400,
+      "altitude_step": 30,
+      "layers": [
+        {
+          "layer_index": 1,
+          "card_count": 5,
+          "altitude": 400
+        },
+        {
+          "layer_index": 2,
+          "card_count": 5,
+          "altitude": 430
+        },
+        {
+          "layer_index": 3,
+          "card_count": 5,
+          "altitude": 460
+        },
+        {
+          "layer_index": 4,
+          "card_count": 5,
+          "altitude": 490
+        },
+        {
+          "layer_index": 5,
+          "card_count": 4,
+          "altitude": 520
+        },
+        {
+          "layer_index": 6,
+          "card_count": 3,
+          "altitude": 550
+        },
+        {
+          "layer_index": 7,
+          "card_count": 3,
+          "altitude": 580
+        },
+        {
+          "layer_index": 8,
+          "card_count": 2,
+          "altitude": 610
+        },
+        {
+          "layer_index": 9,
+          "card_count": 1,
+          "altitude": 640,
+          "is_summit": true
+        }
+      ],
+      "weather": {
+        "type": "typhoon",
+        "effects": {
+          "temperature_mod": 1.3,
+          "visibility_mod": 0.7
+        }
+      },
+      "terrain_obstacle_rate": 0.24,
+      "required_energy": 120
+    },
+    "8": {
+      "id": 8,
+      "name": "南澳岛",
+      "phase": "late",
+      "total_layers": 9,
+      "altitude_start": 380,
+      "altitude_step": 30,
+      "layers": [
+        {
+          "layer_index": 1,
+          "card_count": 5,
+          "altitude": 380
+        },
+        {
+          "layer_index": 2,
+          "card_count": 5,
+          "altitude": 410
+        },
+        {
+          "layer_index": 3,
+          "card_count": 5,
+          "altitude": 440
+        },
+        {
+          "layer_index": 4,
+          "card_count": 5,
+          "altitude": 470
+        },
+        {
+          "layer_index": 5,
+          "card_count": 4,
+          "altitude": 500
+        },
+        {
+          "layer_index": 6,
+          "card_count": 3,
+          "altitude": 530
+        },
+        {
+          "layer_index": 7,
+          "card_count": 3,
+          "altitude": 560
+        },
+        {
+          "layer_index": 8,
+          "card_count": 2,
+          "altitude": 590
+        },
+        {
+          "layer_index": 9,
+          "card_count": 1,
+          "altitude": 620,
+          "is_summit": true
+        }
+      ],
+      "weather": {
+        "type": "cloudy",
+        "effects": {
+          "temperature_mod": 0.9,
+          "visibility_mod": 0.9
+        }
+      },
+      "terrain_obstacle_rate": 0.25,
+      "required_energy": 125
+    },
+    "9": {
+      "id": 9,
+      "name": "香港迪士尼乐园",
+      "phase": "late",
+      "total_layers": 9,
+      "altitude_start": 300,
+      "altitude_step": 25,
+      "layers": [
+        {
+          "layer_index": 1,
+          "card_count": 5,
+          "altitude": 300
+        },
+        {
+          "layer_index": 2,
+          "card_count": 5,
+          "altitude": 325
+        },
+        {
+          "layer_index": 3,
+          "card_count": 5,
+          "altitude": 350
+        },
+        {
+          "layer_index": 4,
+          "card_count": 5,
+          "altitude": 375
+        },
+        {
+          "layer_index": 5,
+          "card_count": 4,
+          "altitude": 400
+        },
+        {
+          "layer_index": 6,
+          "card_count": 3,
+          "altitude": 425
+        },
+        {
+          "layer_index": 7,
+          "card_count": 3,
+          "altitude": 450
+        },
+        {
+          "layer_index": 8,
+          "card_count": 2,
+          "altitude": 475
+        },
+        {
+          "layer_index": 9,
+          "card_count": 1,
+          "altitude": 500,
+          "is_summit": true
+        }
+      ],
+      "weather": {
+        "type": "sunny",
+        "effects": {
+          "temperature_mod": 1.0,
+          "visibility_mod": 1.0
+        }
+      },
+      "terrain_obstacle_rate": 0.24,
+      "required_energy": 130
+    },
+    "10": {
+      "id": 10,
+      "name": "港珠澳大桥全线",
+      "phase": "boss",
+      "total_layers": 11,
+      "altitude_start": 400,
+      "altitude_step": 20,
+      "layers": [
+        {
+          "layer_index": 1,
+          "card_count": 6,
+          "altitude": 400
+        },
+        {
+          "layer_index": 2,
+          "card_count": 6,
+          "altitude": 420
+        },
+        {
+          "layer_index": 3,
+          "card_count": 6,
+          "altitude": 440
+        },
+        {
+          "layer_index": 4,
+          "card_count": 5,
+          "altitude": 460
+        },
+        {
+          "layer_index": 5,
+          "card_count": 4,
+          "altitude": 480
+        },
+        {
+          "layer_index": 6,
+          "card_count": 3,
+          "altitude": 500
+        },
+        {
+          "layer_index": 7,
+          "card_count": 3,
+          "altitude": 520
+        },
+        {
+          "layer_index": 8,
+          "card_count": 2,
+          "altitude": 540
+        },
+        {
+          "layer_index": 9,
+          "card_count": 2,
+          "altitude": 560
+        },
+        {
+          "layer_index": 10,
+          "card_count": 1,
+          "altitude": 580
+        },
+        {
+          "layer_index": 11,
+          "card_count": 1,
+          "altitude": 600,
+          "is_summit": true,
+          "reward_card_id": 5001
+        }
+      ],
+      "weather": {
+        "type": "sunny",
+        "effects": {
+          "temperature_mod": 1.0,
+          "visibility_mod": 1.0
+        }
+      },
+      "terrain_obstacle_rate": 0.25,
+      "required_energy": 150,
+      "is_boss_level": true
+    }
   }
 }

@@ -2,6 +2,229 @@
   "version": "1.0",
   "last_updated": "2026-01-29",
   "cards": {
-    "note": "完整数据已在对话中生成，包含15张示例卡牌。请从对话中复制完整的card_database.json内容到此处。"
+    "0_1": {
+      "id": 1001,
+      "name": "维多利亚港",
+      "type": "scenery",
+      "tier": 1,
+      "icon_path": "res://resources/textures/cards/scenery_victoria_harbor.png",
+      "description": "香港地标，穿越后恢复10点体能",
+      "effects": [
+        {
+          "type": "restore_energy",
+          "value": 10
+        }
+      ],
+      "combo_bonus": {
+        "type": "extra_energy",
+        "value": 5
+      }
+    },
+    "0_2": {
+      "id": 1002,
+      "name": "广州塔",
+      "type": "scenery",
+      "tier": 2,
+      "icon_path": "res://resources/textures/cards/scenery_canton_tower.png",
+      "description": "广州地标，穿越后恢复15点体能，获得5点徒步数",
+      "effects": [
+        {
+          "type": "restore_energy",
+          "value": 15
+        },
+        {
+          "type": "gain_hiking_number",
+          "value": 5
+        }
+      ],
+      "combo_bonus": {
+        "type": "extra_hiking_number",
+        "value": 10
+      }
+    },
+    "0_3": {
+      "id": 1003,
+      "name": "大三巴牌坊",
+      "type": "scenery",
+      "tier": 3,
+      "icon_path": "res://resources/textures/cards/scenery_ruins_of_st_paul.png",
+      "description": "澳门地标，穿越后恢复20点体能，获得10点环保值",
+      "effects": [
+        {
+          "type": "restore_energy",
+          "value": 20
+        },
+        {
+          "type": "gain_eco_value",
+          "value": 10
+        }
+      ],
+      "combo_bonus": {
+        "type": "extra_eco_value",
+        "value": 15
+      }
+    },
+    "1_1": {
+      "id": 2001,
+      "name": "陡坡",
+      "type": "terrain",
+      "tier": 1,
+      "icon_path": "res://resources/textures/cards/terrain_steep_slope.png",
+      "description": "陡峭的山坡，需要消耗15点体能翻越",
+      "effects": [],
+      "combo_bonus": {}
+    },
+    "1_2": {
+      "id": 2002,
+      "name": "岩石障碍",
+      "type": "terrain",
+      "tier": 2,
+      "icon_path": "res://resources/textures/cards/terrain_rock_obstacle.png",
+      "description": "大型岩石障碍，需要消耗25点体能翻越",
+      "effects": [],
+      "combo_bonus": {}
+    },
+    "1_3": {
+      "id": 2003,
+      "name": "溪流",
+      "type": "terrain",
+      "tier": 3,
+      "icon_path": "res://resources/textures/cards/terrain_stream.png",
+      "description": "湍急溪流，需要消耗35点体能和5点背包容量",
+      "effects": [],
+      "combo_bonus": {}
+    },
+    "2_1": {
+      "id": 3001,
+      "name": "能量饮料",
+      "type": "resource",
+      "tier": 1,
+      "icon_path": "res://resources/textures/cards/resource_energy_drink.png",
+      "description": "能量饮料，恢复30点体能",
+      "effects": [
+        {
+          "type": "restore_energy",
+          "value": 30
+        }
+      ],
+      "combo_bonus": {}
+    },
+    "2_2": {
+      "id": 3002,
+      "name": "登山背包",
+      "type": "resource",
+      "tier": 2,
+      "icon_path": "res://resources/textures/cards/resource_backpack.png",
+      "description": "登山背包，增加10点背包容量",
+      "effects": [
+        {
+          "type": "increase_backpack",
+          "value": 10
+        }
+      ],
+      "combo_bonus": {}
+    },
+    "2_3": {
+      "id": 3003,
+      "name": "护膝装备",
+      "type": "resource",
+      "tier": 3,
+      "icon_path": "res://resources/textures/cards/resource_knee_pads.png",
+      "description": "护膝装备，减少地形障碍10%的能量消耗",
+      "effects": [],
+      "combo_bonus": {}
+    },
+    "3_1": {
+      "id": 4001,
+      "name": "晴天",
+      "type": "environment",
+      "tier": 1,
+      "icon_path": "res://resources/textures/cards/environment_sunny.png",
+      "description": "晴朗天气，视觉清晰度提升",
+      "effects": [
+        {
+          "type": "restore_energy",
+          "value": 5
+        }
+      ],
+      "combo_bonus": {}
+    },
+    "3_2": {
+      "id": 4002,
+      "name": "高温",
+      "type": "environment",
+      "tier": 2,
+      "icon_path": "res://resources/textures/cards/environment_high_temp.png",
+      "description": "高温天气，耐力消耗增加20%",
+      "effects": [],
+      "combo_bonus": {}
+    },
+    "3_3": {
+      "id": 4003,
+      "name": "台风",
+      "type": "environment",
+      "tier": 3,
+      "icon_path": "res://resources/textures/cards/environment_typhoon.png",
+      "description": "台风天气，所有能量消耗增加30%",
+      "effects": [],
+      "combo_bonus": {}
+    },
+    "4_1": {
+      "id": 5001,
+      "name": "港珠澳大桥",
+      "type": "photo",
+      "tier": 1,
+      "icon_path": "res://resources/textures/cards/photo_hong_kong_zhuhai_macao_bridge.png",
+      "description": "港珠澳大桥照片，获得20点海拔数",
+      "effects": [
+        {
+          "type": "gain_altitude_number",
+          "value": 20
+        }
+      ],
+      "combo_bonus": {}
+    },
+    "4_2": {
+      "id": 5002,
+      "name": "珠江夜景",
+      "type": "photo",
+      "tier": 2,
+      "icon_path": "res://resources/textures/cards/photo_pearl_river_night.png",
+      "description": "珠江夜景照片，获得30点海拔数和10点徒步数",
+      "effects": [
+        {
+          "type": "gain_altitude_number",
+          "value": 30
+        },
+        {
+          "type": "gain_hiking_number",
+          "value": 10
+        }
+      ],
+      "combo_bonus": {}
+    },
+    "4_3": {
+      "id": 5003,
+      "name": "岭南古村",
+      "type": "photo",
+      "tier": 3,
+      "icon_path": "res://resources/textures/cards/photo_lingnan_village.png",
+      "description": "岭南古村照片，获得40点海拔数、20点徒步数和15点环保值",
+      "effects": [
+        {
+          "type": "gain_altitude_number",
+          "value": 40
+        },
+        {
+          "type": "gain_hiking_number",
+          "value": 20
+        },
+        {
+          "type": "gain_eco_value",
+          "value": 15
+        }
+      ],
+      "combo_bonus": {}
+    }
   }
 }
