@@ -6,11 +6,49 @@
 - **用户名**：QieMan1988
 - **项目名称**：gba-hiking
 - **项目类型**：2D卡牌Roguelike策略休闲游戏
+- **最后更新**：2026-01-31
 
 ## 认证信息
 
 - **认证方式**：Personal Access Token (PAT)
 - **Token用途**：代码推送、仓库管理
+- **Token权限**：repo（完全控制仓库）
+- **安全策略**：不将Token存储在配置文件中，使用git credential helper
+
+### 安全认证配置
+
+**重要提醒**：切勿将个人访问令牌写入配置文件或提交到仓库！
+
+#### 方法1：使用Git凭据助手（推荐）
+
+```bash
+# 配置Git使用凭据助手
+git config --global credential.helper store
+
+# 首次推送时会提示输入用户名和令牌
+# 凭据会安全存储在本地
+git push origin main
+```
+
+#### 方法2：使用环境变量
+
+```bash
+# 设置环境变量（每次会话需要重新设置）
+export GIT_TOKEN="your_personal_access_token"
+
+# 推送时使用
+git push https://QieMan1988:$GIT_TOKEN@github.com/QieMan1988/gba-hiking.git main
+```
+
+#### 方法3：使用SSH（最安全）
+
+```bash
+# 如果已配置SSH密钥，切换到SSH URL
+git remote set-url origin git@github.com:QieMan1988/gba-hiking.git
+
+# 推送
+git push origin main
+```
 
 ## 分支策略
 
