@@ -6,6 +6,7 @@
 # ============================================================
 
 extends Node
+class_name GameManager
 
 ## 信号定义
 signal game_started(level_config: Dictionary)

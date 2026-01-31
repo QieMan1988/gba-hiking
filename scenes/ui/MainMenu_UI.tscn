@@ -1,15 +1,15 @@
-[gd_scene load_steps=2 format=3 uid="uid://b8x4x4x4x4x4x"]
+[gd_scene load_steps=2 format=3 uid="uid://d0z6z6z6z6z6z"]
 
-[ext_resource type="Script" path="res://scenes/main_menu/Main_Menu.gd" id="1_mainmenu"]
+[ext_resource type="Script" path="res://scenes/ui/MainMenu_UI.gd" id="1_mainmenuui"]
 
-[node name="Main_Menu" type="Control"]
+[node name="MainMenu_UI" type="Control"]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-script = ExtResource("1_mainmenu")
+script = ExtResource("1_mainmenuui")
 
 [node name="VBoxContainer" type="VBoxContainer" parent="."]
 layout_mode = 1

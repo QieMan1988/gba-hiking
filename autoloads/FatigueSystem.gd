@@ -6,6 +6,7 @@
 # ============================================================
 
 extends Node
+class_name FatigueSystem
 
 ## 信号定义
 signal fatigue_updated(current: float, max_val: float)

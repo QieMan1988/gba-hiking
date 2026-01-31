@@ -6,6 +6,7 @@
 # ============================================================
 
 extends Node
+class_name SaveManager
 
 ## 存档文件路径
 const SAVE_FILE_PATH = "user://save_data.json"

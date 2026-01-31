@@ -6,6 +6,7 @@
 # ============================================================
 
 extends Node
+class_name AttributeSystem
 
 ## 信号定义
 signal attribute_changed(attribute_name: String, current_value: float, max_value: float)
