@@ -6,7 +6,6 @@
 # ============================================================
 
 extends Node
-class_name TerrainSystem
 
 ## 信号定义
 signal terrain_changed(new_terrain: String)

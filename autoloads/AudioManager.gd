@@ -6,7 +6,6 @@
 # ============================================================
 
 extends Node
-class_name AudioManager
 
 ## 音频播放器
 var bgm_player: AudioStreamPlayer

@@ -6,7 +6,6 @@
 # ============================================================
 
 extends Node
-class_name ComboSystem
 
 ## 信号定义
 signal combo_count_changed(count: int)

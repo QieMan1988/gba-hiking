@@ -6,7 +6,6 @@
 # ============================================================
 
 extends Node
-class_name EconomySystem
 
 ## 信号定义
 signal currency_changed(currency_type: String, amount: int)

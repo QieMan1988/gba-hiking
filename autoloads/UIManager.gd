@@ -6,7 +6,6 @@
 # ============================================================
 
 extends Node
-class_name UIManager
 
 ## UI场景引用
 var main_menu_scene: Node

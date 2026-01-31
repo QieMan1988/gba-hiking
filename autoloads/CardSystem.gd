@@ -6,7 +6,6 @@
 # ============================================================
 
 extends Node
-class_name CardSystem
 
 ## 信号定义
 signal card_spawned(card_data: Dictionary, layer_index: int, position: int)

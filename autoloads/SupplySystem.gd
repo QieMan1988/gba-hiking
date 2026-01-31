@@ -6,7 +6,6 @@
 # ============================================================
 
 extends Node
-class_name SupplySystem
 
 ## 信号定义
 signal supplies_updated(supply_type: String, amount: int)
