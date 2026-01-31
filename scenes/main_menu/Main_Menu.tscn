@@ -37,22 +37,22 @@ theme_override_constants/separation = 20
 
 [node name="TitleLabel" type="Label" parent="VBoxContainer"]
 layout_mode = 2
-text = "大湾区徒步"
+text = "GBA Hiking"
 label_settings = SubResource("LabelSettings_1j5xk")
 horizontal_alignment = 1
 
 [node name="StartButton" type="Button" parent="VBoxContainer"]
 layout_mode = 2
-text = "开始游戏"
+text = "Start Game"
 
 [node name="LoadButton" type="Button" parent="VBoxContainer"]
 layout_mode = 2
-text = "加载游戏"
+text = "Load Game"
 
 [node name="SettingsButton" type="Button" parent="VBoxContainer"]
 layout_mode = 2
-text = "设置"
+text = "Settings"
 
 [node name="QuitButton" type="Button" parent="VBoxContainer"]
 layout_mode = 2
-text = "退出"
+text = "Quit"
