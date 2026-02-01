@@ -6,7 +6,6 @@
 # ============================================================
 
 extends Node
-# class_name SteamManager  <-- Commented out to avoid "hides autoload singleton" error
 
 ## Steam初始化状态
 var is_steam_initialized: bool = false
