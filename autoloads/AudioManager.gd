@@ -77,27 +77,42 @@ func _setup_audio_buses() -> void:
 func _load_audio_resources() -> void:
 	"""加载音频资源"""
 	# BGM资源
-	bgm_resources = {
-		"main_menu": preload("res://assets/audio/bgm/main_menu.ogg"),
-		"battle": preload("res://assets/audio/bgm/battle.ogg"),
-		"result": preload("res://assets/audio/bgm/result.ogg"),
-		"shop": preload("res://assets/audio/bgm/shop.ogg")
+	var bgm_paths = {
+		"main_menu": "res://assets/audio/bgm/main_menu.ogg",
+		"battle": "res://assets/audio/bgm/battle.ogg",
+		"result": "res://assets/audio/bgm/result.ogg",
+		"shop": "res://assets/audio/bgm/shop.ogg"
 	}
 	
+	for bgm_name in bgm_paths:
+		bgm_resources[bgm_name] = _safe_load_audio(bgm_paths[bgm_name])
+	
 	# SFX资源
-	sfx_resources = {
-		"card_click": preload("res://assets/audio/sfx/card_click.ogg"),
-		"card_cross": preload("res://assets/audio/sfx/card_cross.ogg"),
-		"combo": preload("res://assets/audio/sfx/combo.ogg"),
-		"terrain_flat": preload("res://assets/audio/sfx/terrain_flat.ogg"),
-		"terrain_slope": preload("res://assets/audio/sfx/terrain_slope.ogg"),
-		"terrain_cliff": preload("res://assets/audio/sfx/terrain_cliff.ogg"),
-		"rest": preload("res://assets/audio/sfx/rest.ogg"),
-		"shop_buy": preload("res://assets/audio/sfx/shop_buy.ogg"),
-		"error": preload("res://assets/audio/sfx/error.ogg"),
-		"game_over": preload("res://assets/audio/sfx/game_over.ogg"),
-		"victory": preload("res://assets/audio/sfx/victory.ogg")
+	var sfx_paths = {
+		"card_click": "res://assets/audio/sfx/card_click.ogg",
+		"card_cross": "res://assets/audio/sfx/card_cross.ogg",
+		"combo": "res://assets/audio/sfx/combo.ogg",
+		"terrain_flat": "res://assets/audio/sfx/terrain_flat.ogg",
+		"terrain_slope": "res://assets/audio/sfx/terrain_slope.ogg",
+		"terrain_cliff": "res://assets/audio/sfx/terrain_cliff.ogg",
+		"rest": "res://assets/audio/sfx/rest.ogg",
+		"shop_buy": "res://assets/audio/sfx/shop_buy.ogg",
+		"error": "res://assets/audio/sfx/error.ogg",
+		"game_over": "res://assets/audio/sfx/game_over.ogg",
+		"victory": "res://assets/audio/sfx/victory.ogg"
 	}
+	
+	for sfx_name in sfx_paths:
+		sfx_resources[sfx_name] = _safe_load_audio(sfx_paths[sfx_name])
+
+## 安全加载音频资源
+func _safe_load_audio(path: String) -> AudioStream:
+	"""安全加载音频，如果文件不存在则返回null"""
+	if FileAccess.file_exists(path):
+		return load(path)
+	else:
+		print_debug("[AudioManager] Resource not found: %s" % path)
+		return null
 
 ## 加载音量设置
 func _load_volume_settings() -> void:

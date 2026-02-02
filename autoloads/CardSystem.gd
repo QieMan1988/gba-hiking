@@ -69,10 +69,10 @@ func _generate_all_layers_cards() -> void:
 	var total_layers = GameManager.total_layers
 	
 	for layer_index in range(total_layers):
-		_generate_layer_cards(layer_index)
+		_generate_layer_cards(layer_index, total_layers)
 
 ## 生成单层卡牌
-func _generate_layer_cards(layer_index: int) -> void:
+func _generate_layer_cards(layer_index: int, total_layers: int) -> void:
 	"""生成特定层级的卡牌"""
 	var layer_info = GameManager.get_current_layer_info()
 	var is_first_layer = layer_index == 0
@@ -484,7 +484,7 @@ func _remove_card_from_layer(layer_index: int, card_id: String) -> void:
 			break
 
 ## 查找卡牌
-func _find_card_by_id(card_id: String) -> Dictionary:
+func _find_card_by_id(card_id: String) -> Variant:
 	"""根据ID查找卡牌"""
 	for layer_index in current_cards:
 		for card_data in current_cards[layer_index]:

@@ -151,7 +151,7 @@ func get_max_combo() -> int:
 	return max_combo
 
 ## 检查连击是否活跃
-func is_combo_active() -> bool:
+func check_is_combo_active() -> bool:
 	"""检查连击是否活跃"""
 	return is_combo_active
 
