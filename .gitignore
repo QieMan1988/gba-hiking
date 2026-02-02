@@ -17,3 +17,8 @@ mono_crash.*.json
 
 # Compilation caches
 node-compile-cache/
+
+# Logs and IDE
+godot-error.log
+.trae/
+!.trae/rules/
