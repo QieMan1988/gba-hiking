@@ -314,9 +314,9 @@ func is_cloud_save_available() -> bool:
 	return cloud_save_enabled
 
 ## 同步存档到云
-func sync_save_to_cloud(_save_data: Dictionary) -> bool:
+func sync_save_to_cloud(save_data: Dictionary) -> bool:
 	"""同步存档到云"""
-	if _save_data.is_empty():
+	if save_data.is_empty():
 		return false
 	if not is_cloud_save_available():
 		return false
@@ -448,9 +448,9 @@ func _upload_statistic(stat_name: String, value: float) -> void:
 	print_debug("[SteamManager] Uploaded statistic: %s = %.2f" % [stat_name, value])
 
 ## 下载统计数据
-func _download_statistic(_stat_name: String) -> float:
+func _download_statistic(stat_name: String) -> float:
 	"""从Steam下载统计数据"""
-	if _stat_name.is_empty():
+	if stat_name.is_empty():
 		return 0.0
 	if not is_steam_available:
 		return 0.0

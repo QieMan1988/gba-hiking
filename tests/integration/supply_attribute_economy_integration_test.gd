@@ -1,8 +1,10 @@
-extends SceneTree
+extends Node
 
 var failed: bool = false
 
-func _initialize() -> void:
+func _ready() -> void:
+	print("Starting Supply-Attribute-Economy Integration Test...")
+	# Autoloads are already initialized, but we might need to reset/re-init game state
 	GameManager.load_game_configs()
 	AttributeSystem.initialize()
 	EconomySystem.initialize()
@@ -10,9 +12,11 @@ func _initialize() -> void:
 	_test_sports_drink()
 	_test_chocolate()
 	if failed:
-		quit(1)
+		print("Test Failed!")
+		get_tree().quit(1)
 	else:
-		quit(0)
+		print("Test Passed!")
+		get_tree().quit(0)
 
 func _prepare_attributes() -> void:
 	AttributeSystem.apply_attribute_delta("energy", -40.0)

@@ -93,7 +93,7 @@ func show_battle_scene() -> void:
 	if current_scene:
 		current_scene.queue_free()
 
-	battle_scene = load("res://scenes/BattleScene.tscn").instantiate()
+	battle_scene = load("res://scenes/battle/Battle_Scene.tscn").instantiate()
 	get_tree().current_scene.add_child(battle_scene)
 	current_scene = battle_scene
 
@@ -142,16 +142,23 @@ func _initialize_battle_ui() -> void:
 		return
 
 	# 获取UI元素引用
-	energy_bar = battle_scene.get_node("%EnergyBar")
-	fatigue_bar = battle_scene.get_node("%FatigueBar")
-	hunger_bar = battle_scene.get_node("%HungerBar")
-	thirst_bar = battle_scene.get_node("%ThirstBar")
-	heart_rate_label = battle_scene.get_node("%HeartRateLabel")
-	combo_label = battle_scene.get_node("%ComboLabel")
-	environmental_value_label = battle_scene.get_node("%EnvironmentalValueLabel")
-	distance_label = battle_scene.get_node("%DistanceLabel")
-	elevation_label = battle_scene.get_node("%ElevationLabel")
-	animation_player = battle_scene.get_node("AnimationPlayer")
+	# Battle_Scene -> CanvasLayer(UI) -> Battle_UI
+	var battle_ui_node = battle_scene.find_child("Battle_UI", true, false)
+	if not battle_ui_node:
+		print_debug("[UIManager] Battle_UI node not found in Battle_Scene")
+		return
+
+	# 通过Battle_UI脚本属性获取引用
+	if "energy_bar" in battle_ui_node: energy_bar = battle_ui_node.energy_bar
+	if "fatigue_bar" in battle_ui_node: fatigue_bar = battle_ui_node.fatigue_bar
+	if "hunger_bar" in battle_ui_node: hunger_bar = battle_ui_node.hunger_bar
+	if "thirst_bar" in battle_ui_node: thirst_bar = battle_ui_node.thirst_bar
+	if "heart_rate_label" in battle_ui_node: heart_rate_label = battle_ui_node.heart_rate_label
+	if "combo_label" in battle_ui_node: combo_label = battle_ui_node.combo_label
+	if "environmental_value_label" in battle_ui_node: environmental_value_label = battle_ui_node.environmental_value_label
+	if "distance_label" in battle_ui_node: distance_label = battle_ui_node.distance_label
+	if "elevation_label" in battle_ui_node: elevation_label = battle_ui_node.elevation_label
+	if "animation_player" in battle_ui_node: animation_player = battle_ui_node.animation_player
 
 	# 初始化UI显示
 	_update_all_ui()
@@ -272,12 +279,12 @@ func show_warning_dialog(message: String) -> void:
 
 ## 属性变化回调
 func _on_attribute_changed(
-	_attribute_name: String,
+	attribute_name: String,
 	_current_value: float,
 	_max_value: float
 ) -> void:
 	"""属性变化回调"""
-	if _attribute_name.is_empty() and _current_value < 0.0 and _max_value < 0.0:
+	if attribute_name.is_empty() and _current_value < 0.0 and _max_value < 0.0:
 		return
 	_update_attribute_bars()
 
@@ -294,8 +301,8 @@ func _on_environmental_value_changed(amount: int) -> void:
 		environmental_value_label.text = "环保值: %d" % amount
 
 ## 层级变化回调
-func _on_level_changed(_level_index: int) -> void:
+func _on_level_changed(level_index: int) -> void:
 	"""层级变化回调"""
-	if _level_index < 0:
+	if level_index < 0:
 		return
 	_update_labels()

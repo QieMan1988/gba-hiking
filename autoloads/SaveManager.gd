@@ -157,9 +157,9 @@ func load_player_data() -> bool:
 	file.close()
 
 	var json = JSON.new()
-	var error = json.parse(json_string)
+	var parse_error = json.parse(json_string)
 
-	if error != OK:
+	if parse_error != OK:
 		print_debug("[SaveManager] JSON parse error: %s" % json.get_error_message())
 		_load_backup()  # 尝试加载备份
 		is_loading = false

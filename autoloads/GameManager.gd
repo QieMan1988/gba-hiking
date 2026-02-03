@@ -146,10 +146,34 @@ func _set_default_balance_config() -> void:
 ## 初始化信号连接
 func _initialize_signals() -> void:
 	TerrainSystem.knee_damage_taken.connect(_on_knee_damage_taken)
+	AttributeSystem.game_over.connect(_on_game_over)
+
+## 游戏结束回调
+func _on_game_over(reason: String) -> void:
+	print_debug("[GameManager] Game Over received: %s" % reason)
+	complete_level(false, _get_level_result())
 
 # ============================================================
 # 游戏流程控制
 # ============================================================
+
+## 开始指定ID的关卡
+func start_level(level_id: String) -> void:
+	# 查找关卡配置
+	var level_config = {}
+	# 这里应该从ConfigManager获取，暂时mock
+	if level_id == "level_001":
+		level_config = {
+			"id": "level_001",
+			"name": "麦理浩径第一段",
+			"layers": 5,
+			"elevation_gain": 200.0,
+			"layer_distance_per": 2.0
+		}
+	else:
+		level_config = current_level_config
+		
+	start_game(level_config)
 
 ## 启动游戏
 func start_game(level_config: Dictionary) -> void:

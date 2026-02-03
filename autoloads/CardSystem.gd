@@ -186,6 +186,7 @@ func _create_card_data(
 			card_data["name"] = "风景卡" if card_type != "scenery_summit" else "山顶奖励卡"
 			card_data["description"] = "风景优美" if card_type != "scenery_summit" else "到达山顶！"
 			card_data["effects"]["environmental_value"] = 25 if card_type != "scenery_summit" else 100
+			card_data["effects"]["interaction_type"] = "click"
 		"terrain":
 			var terrain_info = _get_terrain_info(terrain_type)
 			card_data["name"] = terrain_info["name"]
@@ -195,6 +196,10 @@ func _create_card_data(
 			card_data["effects"]["elevation_gain"] = terrain_info.get("elevation_gain", 0)
 			card_data["effects"]["traverse_time"] = terrain_info.get("traverse_time", 1.5)
 			card_data["effects"]["heart_rate_increase"] = terrain_info.get("heart_rate_increase", 0)
+			if terrain_info.has("interaction_type"):
+				card_data["effects"]["interaction_type"] = terrain_info["interaction_type"]
+			else:
+				card_data["effects"]["interaction_type"] = "click"
 		"resource":
 			var resource_id = _random_resource()
 			var resource_data = _get_resource_data(resource_id)
@@ -202,12 +207,14 @@ func _create_card_data(
 			card_data["description"] = resource_data["description"]
 			card_data["resource_id"] = resource_id
 			card_data["effects"] = resource_data["effects"]
+			card_data["effects"]["interaction_type"] = "click"
 		"environment":
 			var env_id = _random_environment()
 			var env_data = _get_environment_data(env_id)
 			card_data["name"] = env_data["name"]
 			card_data["description"] = env_data["description"]
 			card_data["effects"] = env_data["effects"]
+			card_data["effects"]["interaction_type"] = "click"
 
 	return card_data
 
@@ -240,7 +247,8 @@ func _get_terrain_info(terrain_type: String) -> Dictionary:
 			"fatigue_gain": 3.0,
 			"elevation_gain": 150.0,
 			"traverse_time": 2.5,
-			"heart_rate_increase": 10
+			"heart_rate_increase": 10,
+			"interaction_type": "long_press"
 		},
 		"cliff": {
 			"name": "悬崖栈道",
@@ -250,7 +258,8 @@ func _get_terrain_info(terrain_type: String) -> Dictionary:
 			"elevation_gain": 300.0,
 			"traverse_time": 3.0,
 			"heart_rate_increase": 15,
-			"requires_confirmation": true
+			"requires_confirmation": true,
+			"interaction_type": "confirm"
 		},
 		"gentle_down": {
 			"name": "缓坡下坡",

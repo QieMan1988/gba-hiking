@@ -30,10 +30,10 @@ Get-ChildItem -Path $resultsDir -Filter "*.log" -ErrorAction SilentlyContinue | 
 $testFiles = @()
 switch ($TestType) {
     "unit" { $testFiles = Get-ChildItem -Path (Join-Path $testDir "unit") -Recurse -Filter "*_test.gd" -ErrorAction SilentlyContinue }
-    "integration" { $testFiles = Get-ChildItem -Path (Join-Path $testDir "integration") -Recurse -Filter "*_integration_test.gd" -ErrorAction SilentlyContinue }
+    "integration" { $testFiles = Get-ChildItem -Path (Join-Path $testDir "integration") -Recurse -Filter "*_test.gd" -ErrorAction SilentlyContinue }
     "all" {
         $testFiles += Get-ChildItem -Path (Join-Path $testDir "unit") -Recurse -Filter "*_test.gd" -ErrorAction SilentlyContinue
-        $testFiles += Get-ChildItem -Path (Join-Path $testDir "integration") -Recurse -Filter "*_integration_test.gd" -ErrorAction SilentlyContinue
+        $testFiles += Get-ChildItem -Path (Join-Path $testDir "integration") -Recurse -Filter "*_test.gd" -ErrorAction SilentlyContinue
     }
     default {
         Write-Host "[ERROR] Unknown test type: $TestType"
@@ -56,7 +56,20 @@ foreach ($testFile in $testFiles) {
     $testName = $testFile.BaseName
     Write-Host "[TEST] Running: $testName"
     $logPath = Join-Path $resultsDir ("{0}.log" -f $testName)
-    & $GodotPath --headless --script $testFile.FullName *> $logPath
+
+    # Check if a corresponding .tscn file exists
+    $tscnPath = $testFile.FullName -replace "\.gd$", ".tscn"
+
+    if (Test-Path $tscnPath) {
+        # Run the scene file (this loads autoloads)
+        Write-Host "[DEBUG] Running command: $GodotPath --headless $tscnPath"
+        & $GodotPath --headless $tscnPath 2>&1 | Out-File -FilePath $logPath -Encoding utf8
+    } else {
+        # Run the script file
+        Write-Host "[DEBUG] Running command: $GodotPath --headless --script $($testFile.FullName)"
+        & $GodotPath --headless --script $testFile.FullName 2>&1 | Out-File -FilePath $logPath -Encoding utf8
+    }
+
     if ($LASTEXITCODE -eq 0) {
         $passed++
         Write-Host "[INFO] PASS: $testName"

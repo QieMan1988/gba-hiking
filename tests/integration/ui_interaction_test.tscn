@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3 uid="uid://ui_test_scene"]
+
+[ext_resource type="Script" path="res://tests/integration/ui_interaction_test.gd" id="1_ui_test"]
+
+[node name="Node" type="Node"]
+script = ExtResource("1_ui_test")

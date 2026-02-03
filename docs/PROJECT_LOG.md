@@ -11,6 +11,30 @@
 
 ---
 
+## 2026年2月3日 - UI交互完善与流程修复
+
+### 核心功能
+- **UI视觉反馈**：
+  - `Card.gd`: 实现长按操作的视觉反馈，包括卡牌缩放、震动动画与进度条显示。
+  - `CliffConfirmation`: 新增悬崖确认弹窗场景，替代原有的纯代码实现，提升UI可维护性。
+  - `Battle_UI.gd`: 集成新的确认弹窗组件，优化长按逻辑。
+
+### 缺陷修复
+- **主菜单交互**：
+  - 修复 `Main_Menu.gd` 中按钮信号连接可能失败的问题（添加空值检查与调试日志）。
+  - 增加输入事件调试日志，辅助排查交互无响应问题。
+- **代码质量优化 (Lint Fixes)**：
+  - 修复 `Battle_UI.gd` 中 `Control.LAYOUT_MODE_ANCHORS` 枚举类型错误，替换为整数常量 `1`。
+  - 修正 `Battle_UI.gd` 中未声明的 `cliff_confirmation` 变量引用，统一为 `cliff_confirm_panel`。
+  - 解决 `ui_interaction_test.gd` 中混用 Tab 和空格的缩进问题，统一为 Tab 缩进。
+  - 消除 `SaveManager.gd`, `SteamManager.gd`, `UIManager.gd` 中的变量遮蔽警告和未使用参数警告。
+  - 修正 `supply_attribute_economy_integration_test.gd` 继承自 `SceneTree` 导致无法作为场景运行的问题，改为继承 `Node` 并使用 `_ready` 初始化。
+- **测试系统改进**：
+  - 升级 `run_tests.ps1` 脚本，支持自动检测并运行 `.tscn` 测试场景（Integration Test），解决了 autoloads 未加载导致测试失败的问题。
+  - 验证所有集成测试（4/4）通过，覆盖 UI 交互、属性系统、地形生成等核心模块。
+
+---
+
 ## 2026年2月1日 - 项目计划更新与核心系统启动
 
 ### 计划变更
