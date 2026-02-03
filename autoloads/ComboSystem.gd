@@ -11,11 +11,6 @@ extends Node
 signal combo_count_changed(count: int)
 signal combo_reward_activated(reward_type: String, amount: float)
 
-## 连击数据
-var current_combo: int = 0
-var max_combo: int = 0
-var combo_chain: Array = []  # 记录连击历史
-
 ## 连击奖励阈值
 const COMBO_REWARDS = {
 	3: {"type": "environmental_value", "amount": 50},
@@ -23,6 +18,11 @@ const COMBO_REWARDS = {
 	7: {"type": "fatigue", "amount": -5},
 	10: {"type": "environmental_value", "amount": 100, "energy": 20}
 }
+
+## 连击数据
+var current_combo: int = 0
+var max_combo: int = 0
+var combo_chain: Array = []  # 记录连击历史
 
 ## 连击效果持续时间
 var combo_effect_timer: Timer
@@ -67,25 +67,25 @@ func add_combo(card_type: String) -> void:
 	if card_type == "scenery" or card_type == "scenery_summit":
 		current_combo += 1
 		combo_chain.append(card_type)
-		
+
 		# 更新最大连击
 		if current_combo > max_combo:
 			max_combo = current_combo
-		
+
 		# 检查奖励
 		_check_combo_rewards()
-		
+
 		# 发送信号
 		combo_count_changed.emit(current_combo)
-		
+
 		# 显示连击效果
 		_show_combo_effect()
-		
+
 		# 重置效果定时器
 		if combo_effect_timer.time_left > 0:
 			combo_effect_timer.stop()
 		combo_effect_timer.start()
-		
+
 		print_debug("[ComboSystem] Combo increased to %d" % current_combo)
 	else:
 		# 非风景卡，重置连击
@@ -112,15 +112,15 @@ func _activate_combo_reward(reward: Dictionary) -> void:
 	"""激活连击奖励"""
 	var reward_type = reward["type"]
 	var amount = reward["amount"]
-	
+
 	match reward_type:
 		"environmental_value":
 			EconomySystem.add_environmental_value(amount)
 		"energy":
-			AttributeSystem.recover_energy(amount)
+			AttributeSystem.apply_attribute_delta("energy", amount)
 		"fatigue":
-			AttributeSystem.reduce_fatigue(abs(amount))
-	
+			AttributeSystem.apply_attribute_delta("fatigue", -abs(amount))
+
 	combo_reward_activated.emit(reward_type, amount)
 	print_debug("[ComboSystem] Combo reward activated: %s x%d" % [reward_type, amount])
 
@@ -160,11 +160,10 @@ func get_combo_multiplier() -> float:
 	"""获取连击倍率（用于奖励计算）"""
 	if current_combo < 3:
 		return 1.0
-	elif current_combo < 5:
+	if current_combo < 5:
 		return 1.5
-	elif current_combo < 7:
+	if current_combo < 7:
 		return 2.0
-	elif current_combo < 10:
+	if current_combo < 10:
 		return 3.0
-	else:
-		return 5.0
+	return 5.0

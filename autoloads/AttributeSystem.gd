@@ -78,10 +78,10 @@ func initialize() -> void:
 	current_hunger = GameManager.get_game_config("initial_hunger", 100.0)
 	current_thirst = GameManager.get_game_config("initial_thirst", 100.0)
 	current_heart_rate = RESTING_HEART_RATE
-	
+
 	# 更新最大负重
 	_update_max_carry_capacity()
-	
+
 	print_debug("[AttributeSystem] Attributes initialized: E=%d, F=%.1f, H=%d, T=%d, HR=%d" % [
 		current_energy, current_fatigue, current_hunger, current_thirst, current_heart_rate
 	])
@@ -95,7 +95,7 @@ func _setup_timers() -> void:
 	recovery_timer.autostart = false
 	recovery_timer.timeout.connect(_on_recovery_timer_timeout)
 	add_child(recovery_timer)
-	
+
 	# 属性变化定时器（用于检查状态变化）
 	attribute_update_timer = Timer.new()
 	attribute_update_timer.wait_time = 0.5  # 每0.5秒检查
@@ -116,66 +116,128 @@ func stop_recovery() -> void:
 	recovery_timer.stop()
 	attribute_update_timer.stop()
 
+func get_attribute(attribute: String) -> float:
+	match attribute:
+		"energy":
+			return current_energy
+		"fatigue":
+			return current_fatigue
+		"hunger":
+			return current_hunger
+		"thirst":
+			return current_thirst
+		"heart_rate":
+			return float(current_heart_rate)
+		_:
+			return 0.0
+
+func get_attribute_max(attribute: String) -> float:
+	match attribute:
+		"energy":
+			return MAX_ENERGY
+		"fatigue":
+			return MAX_FATIGUE
+		"hunger":
+			return MAX_HUNGER
+		"thirst":
+			return MAX_THIRST
+		"heart_rate":
+			return float(MAX_HEART_RATE)
+		_:
+			return 0.0
+
+func apply_attribute_delta(attribute: String, amount: float) -> bool:
+	var success = true
+	match attribute:
+		"energy":
+			if amount < 0.0:
+				success = _consume_energy(abs(amount))
+			else:
+				_recover_energy(amount)
+		"fatigue":
+			if amount >= 0.0:
+				_add_fatigue(amount)
+			else:
+				_reduce_fatigue(abs(amount))
+		"hunger":
+			if amount >= 0.0:
+				_consume_hunger(amount)
+			else:
+				_recover_hunger(abs(amount))
+		"thirst":
+			if amount >= 0.0:
+				_consume_thirst(amount)
+			else:
+				_recover_thirst(abs(amount))
+		"heart_rate":
+			if amount >= 0.0:
+				_increase_heart_rate(int(abs(amount)))
+			else:
+				_decrease_heart_rate(int(abs(amount)))
+		_:
+			success = false
+	return success
+
 # ============================================================
 # 体力系统
 # ============================================================
 
 ## 获取当前体力
-func get_energy() -> float:
+func _get_energy() -> float:
 	"""获取当前体力"""
 	return current_energy
 
 ## 获取最大体力
-func get_max_energy() -> float:
+func _get_max_energy() -> float:
 	"""获取最大体力"""
 	return MAX_ENERGY
 
 ## 消耗体力
-func consume_energy(amount: float) -> bool:
+func _consume_energy(amount: float) -> bool:
 	"""消耗体力，返回是否成功（体力不足返回false）"""
 	var actual_cost = amount * energy_cost_rate
-	
+
 	# 体力为0时游戏结束
 	if current_energy <= MIN_ENERGY:
 		_trigger_game_over("体力耗尽")
 		return false
-	
+
 	current_energy -= actual_cost
-	
+
 	# 检查是否耗尽
 	if current_energy <= MIN_ENERGY:
 		current_energy = MIN_ENERGY
 		_trigger_game_over("体力耗尽")
 		return false
-	
+
 	# 限制在范围内
 	current_energy = clampf(current_energy, MIN_ENERGY, MAX_ENERGY)
-	
+
 	# 信号
 	energy_changed.emit(current_energy, MAX_ENERGY)
 	attribute_changed.emit("energy", current_energy, MAX_ENERGY)
-	
+
 	return true
 
 ## 恢复体力
-func recover_energy(amount: float) -> void:
+func _recover_energy(amount: float) -> void:
 	"""恢复体力"""
 	var actual_recovery = amount * energy_recovery_rate
-	
+
 	# 根据饥饿和口渴调整恢复速率
 	actual_recovery *= _get_recovery_multiplier()
-	
+
 	current_energy += actual_recovery
-	
+
 	# 限制在范围内
 	current_energy = clampf(current_energy, MIN_ENERGY, MAX_ENERGY)
-	
+
 	# 信号
 	energy_changed.emit(current_energy, MAX_ENERGY)
 	attribute_changed.emit("energy", current_energy, MAX_ENERGY)
 
 ## 检查体力是否充足
-func is_energy_sufficient(required_amount: float) -> bool:
+func _is_energy_sufficient(required_amount: float) -> bool:
 	"""检查体力是否充足"""
 	return current_energy >= required_amount
 
@@ -184,60 +246,60 @@ func is_energy_sufficient(required_amount: float) -> bool:
 # ============================================================
 
 ## 获取当前疲劳
-func get_fatigue() -> float:
+func _get_fatigue() -> float:
 	"""获取当前疲劳值"""
 	return current_fatigue
 
 ## 获取最大疲劳
-func get_max_fatigue() -> float:
+func _get_max_fatigue() -> float:
 	"""获取最大疲劳值"""
 	return MAX_FATIGUE
 
 ## 增加疲劳
-func add_fatigue(amount: float) -> void:
+func _add_fatigue(amount: float) -> void:
 	"""增加疲劳值"""
 	var actual_gain = amount * fatigue_gain_rate
-	
+
 	# 根据心率调整疲劳增长速率
 	if current_heart_rate > 140:
 		actual_gain *= 1.5
 	elif current_heart_rate > 120:
 		actual_gain *= 1.2
-	
+
 	current_fatigue += actual_gain
-	
+
 	# 限制在范围内
 	current_fatigue = clampf(current_fatigue, 0.0, MAX_FATIGUE)
-	
+
 	# 信号
 	fatigue_changed.emit(current_fatigue, MAX_FATIGUE)
 	attribute_changed.emit("fatigue", current_fatigue, MAX_FATIGUE)
 
 ## 减少疲劳
-func reduce_fatigue(amount: float) -> void:
+func _reduce_fatigue(amount: float) -> void:
 	"""减少疲劳值（通过休息）"""
 	current_fatigue -= amount
-	
+
 	# 限制在范围内
 	current_fatigue = clampf(current_fatigue, 0.0, MAX_FATIGUE)
-	
+
 	# 信号
 	fatigue_changed.emit(current_fatigue, MAX_FATIGUE)
 	attribute_changed.emit("fatigue", current_fatigue, MAX_FATIGUE)
 
 ## 重置疲劳
-func reset_fatigue() -> void:
+func _reset_fatigue() -> void:
 	"""重置疲劳值（深度休息后）"""
 	current_fatigue = 0.0
 	fatigue_changed.emit(current_fatigue, MAX_FATIGUE)
 	attribute_changed.emit("fatigue", current_fatigue, MAX_FATIGUE)
 
 ## 计算疲劳积累
-func calculate_fatigue_accumulation(distance: float, elevation_gain: float) -> float:
+func _calculate_fatigue_accumulation(distance: float, elevation_gain: float) -> float:
 	"""根据徒步距离和累积爬升计算疲劳积累"""
 	var fatigue_from_distance = distance / 5.0
 	var fatigue_from_elevation = elevation_gain / 250.0
-	
+
 	return fatigue_from_distance + fatigue_from_elevation
 
 # ============================================================
@@ -245,204 +307,200 @@ func calculate_fatigue_accumulation(distance: float, elevation_gain: float) -> f
 # ============================================================
 
 ## 获取当前饥饿
-func get_hunger() -> float:
+func _get_hunger() -> float:
 	"""获取当前饥饿值"""
 	return current_hunger
 
 ## 获取最大饥饿
-func get_max_hunger() -> float:
+func _get_max_hunger() -> float:
 	"""获取最大饥饿值"""
 	return MAX_HUNGER
 
 ## 消耗饥饿
-func consume_hunger(amount: float) -> void:
+func _consume_hunger(amount: float) -> void:
 	"""消耗饥饿值"""
 	var actual_loss = amount * hunger_loss_rate
-	
+
 	current_hunger -= actual_loss
-	
+
 	# 限制在范围内
 	current_hunger = clampf(current_hunger, 0.0, MAX_HUNGER)
-	
+
 	# 信号
 	hunger_changed.emit(current_hunger, MAX_HUNGER)
 	attribute_changed.emit("hunger", current_hunger, MAX_HUNGER)
 
 ## 恢复饥饿
-func recover_hunger(amount: float) -> void:
+func _recover_hunger(amount: float) -> void:
 	"""恢复饥饿值（通过进食）"""
 	var actual_recovery = amount * hunger_recovery_rate
-	
+
 	current_hunger += actual_recovery
-	
+
 	# 限制在范围内
 	current_hunger = clampf(current_hunger, 0.0, MAX_HUNGER)
-	
+
 	# 信号
 	hunger_changed.emit(current_hunger, MAX_HUNGER)
 	attribute_changed.emit("hunger", current_hunger, MAX_HUNGER)
 
 ## 检查饥饿状态
-func get_hunger_status() -> String:
+func _get_hunger_status() -> String:
 	"""获取饥饿状态"""
 	if current_hunger >= 80:
 		return "satiated"
-	elif current_hunger >= 50:
+	if current_hunger >= 50:
 		return "normal"
-	elif current_hunger >= 30:
+	if current_hunger >= 30:
 		return "hungry"
-	elif current_hunger >= 15:
+	if current_hunger >= 15:
 		return "very_hungry"
-	else:
-		return "starving"
+	return "starving"
 
 # ============================================================
 # 口渴系统
 # ============================================================
 
 ## 获取当前口渴
-func get_thirst() -> float:
+func _get_thirst() -> float:
 	"""获取当前口渴值"""
 	return current_thirst
 
 ## 获取最大口渴
-func get_max_thirst() -> float:
+func _get_max_thirst() -> float:
 	"""获取最大口渴值"""
 	return MAX_THIRST
 
 ## 消耗口渴
-func consume_thirst(amount: float) -> void:
+func _consume_thirst(amount: float) -> void:
 	"""消耗口渴值"""
 	var actual_loss = amount * thirst_loss_rate
-	
+
 	# 高温天气口渴消耗加倍
 	if GameManager.current_weather == "hot":
 		actual_loss *= 1.5
-	elif GameManager.current_weather == "typhoon":
+	if GameManager.current_weather == "typhoon":
 		actual_loss *= 1.3
-	
+
 	current_thirst -= actual_loss
-	
+
 	# 限制在范围内
 	current_thirst = clampf(current_thirst, 0.0, MAX_THIRST)
-	
+
 	# 信号
 	thirst_changed.emit(current_thirst, MAX_THIRST)
 	attribute_changed.emit("thirst", current_thirst, MAX_THIRST)
 
 ## 恢复口渴
-func recover_thirst(amount: float) -> void:
+func _recover_thirst(amount: float) -> void:
 	"""恢复口渴值（通过饮水）"""
 	var actual_recovery = amount * thirst_recovery_rate
-	
+
 	current_thirst += actual_recovery
-	
+
 	# 限制在范围内
 	current_thirst = clampf(current_thirst, 0.0, MAX_THIRST)
-	
+
 	# 信号
 	thirst_changed.emit(current_thirst, MAX_THIRST)
 	attribute_changed.emit("thirst", current_thirst, MAX_THIRST)
 
 ## 检查口渴状态
-func get_thirst_status() -> String:
+func _get_thirst_status() -> String:
 	"""获取口渴状态"""
 	if current_thirst >= 80:
 		return "well_hydrated"
-	elif current_thirst >= 50:
+	if current_thirst >= 50:
 		return "normal"
-	elif current_thirst >= 30:
+	if current_thirst >= 30:
 		return "thirsty"
-	elif current_thirst >= 15:
+	if current_thirst >= 15:
 		return "very_thirsty"
-	else:
-		return "dehydrated"
+	return "dehydrated"
 
 # ============================================================
 # 心率系统
 # ============================================================
 
 ## 获取当前心率
-func get_heart_rate() -> int:
+func _get_heart_rate() -> int:
 	"""获取当前心率"""
 	return current_heart_rate
 
 ## 增加心率
-func increase_heart_rate(amount: int) -> void:
+func _increase_heart_rate(amount: int) -> void:
 	"""增加心率（运动时）"""
 	var actual_gain = float(amount) * heart_rate_gain_rate
-	
+
 	current_heart_rate += int(actual_gain)
-	
+
 	# 限制在范围内
 	current_heart_rate = clampi(current_heart_rate, MIN_HEART_RATE, MAX_HEART_RATE)
-	
+
 	# 信号
 	heart_rate_changed.emit(current_heart_rate)
 	attribute_changed.emit("heart_rate", float(current_heart_rate), float(MAX_HEART_RATE))
 
 ## 减少心率
-func decrease_heart_rate(amount: int) -> void:
+func _decrease_heart_rate(amount: int) -> void:
 	"""减少心率（休息时）"""
 	var actual_reduction = float(amount) * heart_rate_recovery_rate
-	
+
 	current_heart_rate -= int(actual_reduction)
-	
+
 	# 限制在范围内
 	current_heart_rate = clampi(current_heart_rate, MIN_HEART_RATE, MAX_HEART_RATE)
-	
+
 	# 信号
 	heart_rate_changed.emit(current_heart_rate)
 	attribute_changed.emit("heart_rate", float(current_heart_rate), float(MAX_HEART_RATE))
 
 ## 检查心率状态
-func get_heart_rate_status() -> String:
+func _get_heart_rate_status() -> String:
 	"""获取心率状态"""
 	if current_heart_rate < 100:
 		return "resting"
-	elif current_heart_rate < 130:
+	if current_heart_rate < 130:
 		return "light_exercise"
-	elif current_heart_rate < 150:
+	if current_heart_rate < 150:
 		return "moderate_exercise"
-	elif current_heart_rate < 170:
+	if current_heart_rate < 170:
 		return "intense_exercise"
-	else:
-		return "extreme_exercise"
+	return "extreme_exercise"
 
 ## 计算心率影响
-func calculate_heart_rate_effect() -> Dictionary:
+func _calculate_heart_rate_effect() -> Dictionary:
 	"""计算心率对其他属性的影响"""
 	var effect = {
 		"energy_recovery_multiplier": 1.0,
 		"fatigue_gain_multiplier": 1.0,
 		"operation_efficiency": 1.0
 	}
-	
+
 	if current_heart_rate < 100:
 		# 休息状态，恢复快
 		effect["energy_recovery_multiplier"] = 1.5
 		effect["fatigue_gain_multiplier"] = 0.8
-	elif current_heart_rate < 130:
+	if current_heart_rate < 130:
 		# 轻度运动
 		effect["energy_recovery_multiplier"] = 1.2
 		effect["fatigue_gain_multiplier"] = 1.0
 		effect["operation_efficiency"] = 1.0
-	elif current_heart_rate < 150:
+	if current_heart_rate < 150:
 		# 中度运动
 		effect["energy_recovery_multiplier"] = 1.0
 		effect["fatigue_gain_multiplier"] = 1.2
 		effect["operation_efficiency"] = 0.95
-	elif current_heart_rate < 170:
+	if current_heart_rate < 170:
 		# 高强度运动
 		effect["energy_recovery_multiplier"] = 0.8
 		effect["fatigue_gain_multiplier"] = 1.5
 		effect["operation_efficiency"] = 0.85
-	else:
-		# 极限运动
-		effect["energy_recovery_multiplier"] = 0.5
-		effect["fatigue_gain_multiplier"] = 2.0
-		effect["operation_efficiency"] = 0.7
-	
+	# 极限运动
+	effect["energy_recovery_multiplier"] = 0.5
+	effect["fatigue_gain_multiplier"] = 2.0
+	effect["operation_efficiency"] = 0.7
+
 	return effect
 
 # ============================================================
@@ -463,11 +521,11 @@ func get_max_carry_capacity() -> float:
 func add_carry_weight(weight: float) -> bool:
 	"""增加负重，返回是否成功"""
 	current_carry_weight += weight
-	
+
 	# 限制在最大范围内
 	if current_carry_weight > max_carry_capacity:
 		return false
-	
+
 	return true
 
 ## 减少负重
@@ -480,13 +538,12 @@ func remove_carry_weight(weight: float) -> void:
 func calculate_carry_load_effect() -> float:
 	"""计算负重对疲劳的影响"""
 	var carry_load_ratio = current_carry_weight / max_carry_capacity
-	
+
 	if carry_load_ratio < 0.5:
 		return 1.0
-	elif carry_load_ratio < 0.8:
+	if carry_load_ratio < 0.8:
 		return 1.2
-	else:
-		return 1.5
+	return 1.5
 
 ## 更新最大负重
 func _update_max_carry_capacity() -> void:
@@ -501,12 +558,12 @@ func _update_max_carry_capacity() -> void:
 func set_fear_state(is_fear: bool, duration: float = 3.0) -> void:
 	"""设置恐惧状态"""
 	is_fear_state = is_fear
-	
+
 	if is_fear:
 		# 恐惧状态下心率大幅上升
-		increase_heart_rate(30)
+		_increase_heart_rate(30)
 		print_debug("[AttributeSystem] Fear state activated")
-		
+
 		# 定时器自动解除
 		var timer = Timer.new()
 		timer.wait_time = duration
@@ -520,10 +577,10 @@ func set_fear_state(is_fear: bool, duration: float = 3.0) -> void:
 func set_knee_injury(is_injured: bool) -> void:
 	"""设置膝盖受伤状态"""
 	is_knee_injured = is_injured
-	
+
 	if is_injured:
 		# 膝盖受伤时疲劳增加
-		add_fatigue(10.0)
+		_add_fatigue(10.0)
 		print_debug("[AttributeSystem] Knee injury activated")
 	else:
 		print_debug("[AttributeSystem] Knee injury deactivated")
@@ -532,10 +589,10 @@ func set_knee_injury(is_injured: bool) -> void:
 func set_breathing_difficulty(is_difficult: bool) -> void:
 	"""设置呼吸困难状态"""
 	is_breathing_difficult = is_difficult
-	
+
 	if is_difficult:
 		# 呼吸困难时心率上升，体能消耗增加
-		increase_heart_rate(15)
+		_increase_heart_rate(15)
 		energy_cost_rate *= 1.2
 		print_debug("[AttributeSystem] Breathing difficulty activated")
 	else:
@@ -547,7 +604,7 @@ func start_resting() -> void:
 	"""开始休息"""
 	is_resting = true
 	# 休息时心率下降
-	decrease_heart_rate(20)
+	_decrease_heart_rate(20)
 	print_debug("[AttributeSystem] Started resting")
 
 ## 结束休息
@@ -564,25 +621,25 @@ func stop_resting() -> void:
 func _get_recovery_multiplier() -> float:
 	"""计算饥饿和口渴对恢复速率的影响"""
 	var multiplier = 1.0
-	
+
 	# 饥饿影响
-	var hunger_status = get_hunger_status()
+	var hunger_status = _get_hunger_status()
 	if hunger_status == "hungry":
 		multiplier *= 0.8
-	elif hunger_status == "very_hungry":
+	if hunger_status == "very_hungry":
 		multiplier *= 0.5
-	elif hunger_status == "starving":
+	if hunger_status == "starving":
 		multiplier *= 0.1
-	
+
 	# 口渴影响（影响更大）
-	var thirst_status = get_thirst_status()
+	var thirst_status = _get_thirst_status()
 	if thirst_status == "thirsty":
 		multiplier *= 0.7
-	elif thirst_status == "very_thirsty":
+	if thirst_status == "very_thirsty":
 		multiplier *= 0.3
-	elif thirst_status == "dehydrated":
+	if thirst_status == "dehydrated":
 		multiplier *= 0.05
-	
+
 	return multiplier
 
 ## 触发游戏结束
@@ -593,7 +650,7 @@ func _trigger_game_over(reason: String) -> void:
 	game_over.emit(reason)
 
 ## 获取所有属性状态
-func get_all_attributes() -> Dictionary:
+func _get_all_attributes() -> Dictionary:
 	"""获取所有属性的当前状态"""
 	return {
 		"energy": {
@@ -609,18 +666,18 @@ func get_all_attributes() -> Dictionary:
 		"hunger": {
 			"current": current_hunger,
 			"max": MAX_HUNGER,
-			"status": get_hunger_status()
+			"status": _get_hunger_status()
 		},
 		"thirst": {
 			"current": current_thirst,
 			"max": MAX_THIRST,
-			"status": get_thirst_status()
+			"status": _get_thirst_status()
 		},
 		"heart_rate": {
 			"current": current_heart_rate,
 			"min": MIN_HEART_RATE,
 			"max": MAX_HEART_RATE,
-			"status": get_heart_rate_status()
+			"status": _get_heart_rate_status()
 		},
 		"carry": {
 			"current": current_carry_weight,
@@ -638,37 +695,37 @@ func _on_recovery_timer_timeout() -> void:
 	"""每秒调用一次，处理属性恢复"""
 	if is_resting:
 		# 休息时恢复体力
-		recover_energy(2.0)
+		_recover_energy(2.0)
 		# 休息时减少疲劳
-		reduce_fatigue(0.5)
+		_reduce_fatigue(0.5)
 	else:
 		# 不休息时自然消耗
-		consume_hunger(0.1)
-		consume_thirst(0.15)
+		_consume_hunger(0.1)
+		_consume_thirst(0.15)
 		# 体力自然恢复（根据饥饿口渴状态）
-		recover_energy(0.5)
-		
+		_recover_energy(0.5)
+
 		# 自然心率恢复
 		if current_heart_rate > RESTING_HEART_RATE:
-			decrease_heart_rate(2)
-		
+			_decrease_heart_rate(2)
+
 		# 负重影响疲劳
 		var carry_effect = calculate_carry_load_effect()
-		add_fatigue(0.05 * carry_effect)
+		_add_fatigue(0.05 * carry_effect)
 
 ## 属性更新定时器回调
 func _on_attribute_update_timeout() -> void:
 	"""每0.5秒检查一次属性状态变化"""
 	# 检查是否需要触发特殊状态
-	
+
 	# 饥饿严重
 	if current_hunger < 15:
 		print_debug("[AttributeSystem] Warning: Severe hunger!")
-	
+
 	# 口渴严重
 	if current_thirst < 15:
 		print_debug("[AttributeSystem] Warning: Severe thirst!")
-	
+
 	# 心率过高
 	if current_heart_rate > 170:
 		print_debug("[AttributeSystem] Warning: Heart rate critical!")

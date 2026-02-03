@@ -46,14 +46,30 @@ func consume_supply(type: String) -> bool:
 	if type in supplies and supplies[type] > 0:
 		supplies[type] -= 1
 		var effect = supply_effects.get(type, {})
-		
-		# 这里需要调用AttributeSystem应用效果，暂时只发送信号
+		_apply_supply_effect(effect)
+		EconomySystem.record_consumed_supply(type)
 		supply_consumed.emit(type, effect)
 		supplies_updated.emit(type, supplies[type])
-		
+
 		print_debug("[SupplySystem] Consumed %s, Effect: %s" % [type, effect])
 		return true
 	return false
+
+func _apply_supply_effect(effect: Dictionary) -> void:
+	if effect.is_empty():
+		return
+	if effect.has("energy"):
+		var energy_amount = float(effect["energy"])
+		AttributeSystem.apply_attribute_delta("energy", energy_amount)
+	if effect.has("fatigue"):
+		var fatigue_amount = float(effect["fatigue"])
+		AttributeSystem.apply_attribute_delta("fatigue", fatigue_amount)
+	if effect.has("hunger"):
+		var hunger_amount = float(effect["hunger"])
+		AttributeSystem.apply_attribute_delta("hunger", hunger_amount)
+	if effect.has("thirst"):
+		var thirst_amount = float(effect["thirst"])
+		AttributeSystem.apply_attribute_delta("thirst", thirst_amount)
 
 ## 获取补给数量
 func get_supply_count(type: String) -> int:

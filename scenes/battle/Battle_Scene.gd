@@ -5,8 +5,8 @@
 # 创建日期：2026年2月1日
 # ============================================================
 
-extends Node2D
 class_name BattleScene
+extends Node2D
 
 func _ready() -> void:
 	pass

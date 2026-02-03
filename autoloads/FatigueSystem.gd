@@ -25,7 +25,7 @@ func _ready() -> void:
 func add_fatigue(amount: float) -> void:
 	current_fatigue = min(max_fatigue, current_fatigue + amount)
 	fatigue_updated.emit(current_fatigue, max_fatigue)
-	
+
 	if current_fatigue >= max_fatigue:
 		exhausted.emit()
 		print_debug("[FatigueSystem] Player is EXHAUSTED!")
@@ -37,7 +37,7 @@ func rest(hours: float) -> void:
 	# 假设每小时休息恢复15点疲劳
 	var recovery_rate = 15.0
 	var recovered = hours * recovery_rate
-	
+
 	current_fatigue = max(0.0, current_fatigue - recovered)
 	rest_taken.emit(recovered)
 	fatigue_updated.emit(current_fatigue, max_fatigue)

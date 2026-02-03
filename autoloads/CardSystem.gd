@@ -44,10 +44,10 @@ func initialize() -> void:
 	current_combo_chain.clear()
 	is_traversing = false
 	last_crossed_card_type = ""
-	
+
 	# 生成所有层级的卡牌
 	_generate_all_layers_cards()
-	
+
 	print_debug("[CardSystem] Cards generated for %d layers" % current_cards.size())
 
 ## 设置翻越定时器
@@ -67,47 +67,61 @@ func _setup_traverse_timer() -> void:
 func _generate_all_layers_cards() -> void:
 	"""生成所有层级的卡牌"""
 	var total_layers = GameManager.total_layers
-	
+	var layers_config = GameManager.current_level_config.get("layers", [])
+
 	for layer_index in range(total_layers):
-		_generate_layer_cards(layer_index, total_layers)
+		var layer_config = {}
+		if layer_index < layers_config.size():
+			layer_config = layers_config[layer_index]
+		_generate_layer_cards(layer_index, total_layers, layer_config)
 
 ## 生成单层卡牌
-func _generate_layer_cards(layer_index: int, total_layers: int) -> void:
+func _generate_layer_cards(
+	layer_index: int,
+	total_layers: int,
+	layer_config: Dictionary = {}
+) -> void:
 	"""生成特定层级的卡牌"""
-	var layer_info = GameManager.get_current_layer_info()
-	var is_first_layer = layer_index == 0
 	var is_last_layer = layer_index == total_layers - 1
-	
-	var card_count = _get_card_count_for_layer(layer_index, total_layers)
+
+	var card_count = _get_card_count_for_layer(layer_index, layer_config)
 	var cards = []
-	
+
 	for i in range(card_count):
-		var card_data = _generate_single_card(layer_index, i, card_count, is_last_layer)
+		var card_data = _generate_single_card(layer_index, i, is_last_layer, layer_config)
 		cards.append(card_data)
 		card_spawned.emit(card_data, layer_index, i)
-	
+
 	current_cards[layer_index] = cards
-	
+
 	print_debug("[CardSystem] Generated %d cards for layer %d" % [card_count, layer_index])
 
 ## 获取层级卡牌数量
-func _get_card_count_for_layer(layer_index: int, total_layers: int) -> int:
+func _get_card_count_for_layer(layer_index: int, layer_config: Dictionary = {}) -> int:
 	"""获取特定层级的卡牌数量"""
+	if layer_config.has("card_count"):
+		return int(layer_config["card_count"])
+
 	# 倒金字塔：底部多，顶部少
 	var base_count = 4
 	var decrease = layer_index * 0.5
 	return maxi(1, int(base_count - decrease))
 
 ## 生成单张卡牌
-func _generate_single_card(layer_index: int, position: int, total_cards: int, is_last_layer: bool) -> Dictionary:
+func _generate_single_card(
+	layer_index: int,
+	position: int,
+	is_last_layer: bool,
+	layer_config: Dictionary = {}
+) -> Dictionary:
 	"""生成单张卡牌数据"""
-	var card_type = _determine_card_type(layer_index, position, total_cards, is_last_layer)
-	var card_data = _create_card_data(card_type, layer_index)
-	
+	var card_type = _determine_card_type(position, is_last_layer)
+	var card_data = _create_card_data(card_type, layer_index, layer_config)
+
 	return card_data
 
 ## 确定卡牌类型
-func _determine_card_type(layer_index: int, position: int, total_cards: int, is_last_layer: bool) -> String:
+func _determine_card_type(position: int, is_last_layer: bool) -> String:
 	"""确定卡牌类型"""
 	var weights = {
 		"scenery": 0.4,
@@ -115,43 +129,45 @@ func _determine_card_type(layer_index: int, position: int, total_cards: int, is_
 		"resource": 0.2,
 		"environment": 0.1
 	}
-	
+
 	# 顶层必须是风景卡（山顶奖励卡）
 	if is_last_layer:
 		return "scenery_summit"
-	
+
 	# 确保至少一张风景卡
 	if position == 0:
 		return "scenery"
-	
+
 	# 避免连续3张同类型卡
 	if current_combo_chain.size() >= 2:
 		var last_type = current_combo_chain[current_combo_chain.size() - 1]
 		var prev_type = current_combo_chain[current_combo_chain.size() - 2]
 		if last_type == prev_type:
 			weights[last_type] *= 0.2  # 降低重复类型权重
-	
+
 	# 根据权重随机选择
 	var total_weight = 0.0
 	for weight in weights.values():
 		total_weight += weight
-	
+
 	var random_value = randf() * total_weight
 	var cumulative_weight = 0.0
-	
+
 	for card_type in weights:
 		cumulative_weight += weights[card_type]
 		if random_value <= cumulative_weight:
 			return card_type
-	
+
 	return "scenery"
 
 ## 创建卡牌数据
-func _create_card_data(card_type: String, layer_index: int) -> Dictionary:
+func _create_card_data(
+	card_type: String,
+	layer_index: int,
+	layer_config: Dictionary = {}
+) -> Dictionary:
 	"""创建卡牌数据"""
 	var terrain_type = GameManager.current_terrain_type
-	var card_database = GameManager.get_card_database()
-	
 	var card_data = {
 		"id": "%s_%d_%d" % [card_type, layer_index, randi()],
 		"type": card_type,
@@ -159,7 +175,11 @@ func _create_card_data(card_type: String, layer_index: int) -> Dictionary:
 		"terrain_type": terrain_type,
 		"effects": {}
 	}
-	
+
+	# 存储层级元数据（海拔等）
+	if layer_config.has("altitude"):
+		card_data["altitude"] = layer_config["altitude"]
+
 	# 根据类型设置效果
 	match card_type:
 		"scenery", "scenery_summit":
@@ -188,7 +208,7 @@ func _create_card_data(card_type: String, layer_index: int) -> Dictionary:
 			card_data["name"] = env_data["name"]
 			card_data["description"] = env_data["description"]
 			card_data["effects"] = env_data["effects"]
-	
+
 	return card_data
 
 ## 获取地形信息
@@ -252,7 +272,7 @@ func _get_terrain_info(terrain_type: String) -> Dictionary:
 			"knee_injury_risk": 0.1
 		}
 	}
-	
+
 	return terrain_info.get(terrain_type, terrain_info["flat"])
 
 ## 随机资源
@@ -281,7 +301,7 @@ func _get_resource_data(resource_id: String) -> Dictionary:
 			"effects": {"energy_recovery": 10}
 		}
 	}
-	
+
 	return resource_data.get(resource_id, resource_data["water"])
 
 ## 随机环境事件
@@ -310,7 +330,7 @@ func _get_environment_data(env_id: String) -> Dictionary:
 			"effects": {"environmental_value": 25, "energy_cost": 3}
 		}
 	}
-	
+
 	return env_data.get(env_id, env_data["trash"])
 
 # ============================================================
@@ -323,13 +343,13 @@ func attempt_traverse_card(card_id: String) -> bool:
 	if is_traversing:
 		print_debug("[CardSystem] Already traversing")
 		return false
-	
+
 	# 查找卡牌
 	var card_data = _find_card_by_id(card_id)
 	if card_data == null:
 		push_error("[CardSystem] Card not found: %s" % card_id)
 		return false
-	
+
 	# 检查是否需要确认
 	if card_data["effects"].get("requires_confirmation", false):
 		# 显示确认对话框
@@ -338,7 +358,7 @@ func attempt_traverse_card(card_id: String) -> bool:
 			_card_confirmation_callback.bind(card_id)
 		)
 		return false
-	
+
 	# 开始穿越
 	_start_traverse(card_data)
 	return true
@@ -348,7 +368,7 @@ func _card_confirmation_callback(card_id: String, confirmed: bool) -> void:
 	"""卡牌确认回调"""
 	if not confirmed:
 		return
-	
+
 	var card_data = _find_card_by_id(card_id)
 	if card_data != null:
 		_start_traverse(card_data)
@@ -357,99 +377,120 @@ func _card_confirmation_callback(card_id: String, confirmed: bool) -> void:
 func _start_traverse(card_data: Dictionary) -> void:
 	"""开始穿越卡牌"""
 	is_traversing = true
-	
+
 	# 设置恐惧状态（悬崖栈道）
 	if card_data["type"] == "terrain" and card_data["terrain_type"] == "cliff":
 		AttributeSystem.set_fear_state(true, 3.0)
-	
+
 	# 设置翻越时间
 	var traverse_time = card_data["effects"].get("traverse_time", 1.5)
 	traverse_timer.wait_time = traverse_time
 	traverse_timer.start()
-	
+
 	# 播放穿越动画
 	UIManager.play_traverse_animation(card_data)
-	
-	print_debug("[CardSystem] Started traversing card: %s (time: %.1fs)" % [card_data["id"], traverse_time])
+	var traverse_message = "[CardSystem] Started traversing card: %s (time: %.1fs)" % [
+		card_data["id"],
+		traverse_time
+	]
+	print_debug(traverse_message)
 
 ## 穿越完成回调
 func _on_traverse_completed() -> void:
 	"""穿越完成回调"""
 	if not is_traversing:
 		return
-	
+
 	# 获取当前穿越的卡牌（简化处理）
 	var current_layer = GameManager.current_layer_index
 	var cards = current_cards.get(current_layer, [])
 	if cards.is_empty():
 		is_traversing = false
 		return
-	
+
 	var card_data = cards[0]  # 假设穿越第一张卡牌
-	
+
 	# 应用卡牌效果
 	_apply_card_effects(card_data)
-	
+
 	# 更新连击
 	_update_combo(card_data)
-	
+
 	# 发送信号
 	card_crossed.emit(card_data, current_combo_count)
-	
+
 	# 移除卡牌
 	_remove_card_from_layer(current_layer, card_data["id"])
-	
+
 	# 检查层级是否完成
 	if current_cards.get(current_layer, []).is_empty():
 		layer_completed.emit(current_layer)
 		GameManager.advance_to_next_layer()
-	
+
 	is_traversing = false
-	
+
 	print_debug("[CardSystem] Traversed card: %s, combo: %d" % [card_data["id"], current_combo_count])
 
 ## 应用卡牌效果
 func _apply_card_effects(card_data: Dictionary) -> void:
 	"""应用卡牌效果"""
 	var effects = card_data["effects"]
-	
+
 	# 消耗体能
 	if effects.has("energy_cost"):
-		var success = AttributeSystem.consume_energy(effects["energy_cost"])
+		var success = AttributeSystem.apply_attribute_delta(
+			"energy",
+			-float(effects["energy_cost"])
+		)
 		if not success:
 			return
-	
+
 	# 增加疲劳
 	if effects.has("fatigue_gain"):
-		AttributeSystem.add_fatigue(effects["fatigue_gain"])
-	
+		AttributeSystem.apply_attribute_delta(
+			"fatigue",
+			float(effects["fatigue_gain"])
+		)
+
 	# 增加累积爬升
 	if effects.has("elevation_gain"):
 		var elevation_gain = effects["elevation_gain"]
 		EconomySystem.add_elevation_gain(elevation_gain)
-	
+
 	# 增加心率
 	if effects.has("heart_rate_increase"):
-		AttributeSystem.increase_heart_rate(effects["heart_rate_increase"])
-	
+		AttributeSystem.apply_attribute_delta(
+			"heart_rate",
+			float(effects["heart_rate_increase"])
+		)
+
 	# 恢复属性
 	if effects.has("energy_recovery"):
-		AttributeSystem.recover_energy(float(effects["energy_recovery"]))
+		AttributeSystem.apply_attribute_delta(
+			"energy",
+			float(effects["energy_recovery"])
+		)
 	if effects.has("thirst_recovery"):
-		AttributeSystem.recover_thirst(float(effects["thirst_recovery"]))
+		AttributeSystem.apply_attribute_delta(
+			"thirst",
+			-float(effects["thirst_recovery"])
+		)
 	if effects.has("hunger_recovery"):
-		AttributeSystem.recover_hunger(float(effects["hunger_recovery"]))
-	
+		AttributeSystem.apply_attribute_delta(
+			"hunger",
+			-float(effects["hunger_recovery"])
+		)
+
 	# 环保值
 	if effects.has("environmental_value"):
 		EconomySystem.add_environmental_value(effects["environmental_value"])
-	
+
 	# 膝盖受伤检查
 	if effects.has("knee_injury_risk"):
 		var risk = effects["knee_injury_risk"]
 		if randf() < risk:
 			AttributeSystem.set_knee_injury(true)
-	
+
 	# 发送效果触发信号
 	for effect_type in effects:
 		card_effect_triggered.emit(card_data, effect_type)
@@ -458,7 +499,7 @@ func _apply_card_effects(card_data: Dictionary) -> void:
 func _update_combo(card_data: Dictionary) -> void:
 	"""更新连击计数"""
 	var card_type = card_data["type"]
-	
+
 	# 风景卡连击
 	if card_type == "scenery" or card_type == "scenery_summit":
 		if last_crossed_card_type == "scenery" or last_crossed_card_type == "scenery_summit":
@@ -467,10 +508,10 @@ func _update_combo(card_data: Dictionary) -> void:
 			current_combo_count = 1
 	else:
 		current_combo_count = 0
-	
+
 	last_crossed_card_type = card_type
 	current_combo_chain.append(card_type)
-	
+
 	if current_combo_chain.size() > 5:
 		current_combo_chain.pop_front()
 

@@ -19,7 +19,20 @@
 
 **重要提醒**：切勿将个人访问令牌写入配置文件或提交到仓库！
 
-#### 方法1：使用Git凭据助手（推荐）
+#### 推荐方式：使用 .env 文件（不提交）
+
+项目支持使用 `.env` 文件配置环境变量。该文件已被添加到 `.gitignore` 中，**切勿将其提交到代码仓库**。
+
+1. 在项目根目录创建 `.env` 文件：
+   ```ini
+   # .env
+   GITHUB_TOKEN=your_personal_access_token_here
+   STEAM_API_KEY=your_steam_api_key_here
+   ```
+
+2. 确保 `.gitignore` 包含 `.env`。
+
+#### 备选方式：Git 凭据助手
 
 ```bash
 # 配置Git使用凭据助手
@@ -30,17 +43,7 @@ git config --global credential.helper store
 git push origin main
 ```
 
-#### 方法2：使用环境变量
-
-```bash
-# 设置环境变量（每次会话需要重新设置）
-export GIT_TOKEN="your_personal_access_token"
-
-# 推送时使用
-git push https://QieMan1988:$GIT_TOKEN@github.com/QieMan1988/gba-hiking.git main
-```
-
-#### 方法3：使用SSH（最安全）
+#### 备选方式：SSH（最安全）
 
 ```bash
 # 如果已配置SSH密钥，切换到SSH URL

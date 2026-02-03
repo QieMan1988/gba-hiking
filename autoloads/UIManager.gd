@@ -48,7 +48,7 @@ func _ready() -> void:
 func _load_ui_scenes() -> void:
 	"""加载所有UI场景"""
 	# 注意：这里使用load()而不是preload()以延迟加载
-	pass
+	return
 
 ## 连接信号
 func _connect_signals() -> void:
@@ -67,12 +67,12 @@ func show_main_menu() -> void:
 	"""显示主菜单"""
 	if current_scene:
 		current_scene.queue_free()
-	
+
 	# 加载主菜单场景
 	main_menu_scene = load("res://scenes/MainMenu.tscn").instantiate()
 	get_tree().current_scene.add_child(main_menu_scene)
 	current_scene = main_menu_scene
-	
+
 	print_debug("[UIManager] Showing main menu")
 
 ## 显示关卡选择
@@ -80,11 +80,11 @@ func show_level_select() -> void:
 	"""显示关卡选择"""
 	if current_scene:
 		current_scene.queue_free()
-	
+
 	level_select_scene = load("res://scenes/LevelSelect.tscn").instantiate()
 	get_tree().current_scene.add_child(level_select_scene)
 	current_scene = level_select_scene
-	
+
 	print_debug("[UIManager] Showing level select")
 
 ## 显示战斗场景
@@ -92,14 +92,14 @@ func show_battle_scene() -> void:
 	"""显示战斗场景"""
 	if current_scene:
 		current_scene.queue_free()
-	
+
 	battle_scene = load("res://scenes/BattleScene.tscn").instantiate()
 	get_tree().current_scene.add_child(battle_scene)
 	current_scene = battle_scene
-	
+
 	# 初始化UI元素
 	_initialize_battle_ui()
-	
+
 	print_debug("[UIManager] Showing battle scene")
 
 ## 显示结果界面
@@ -107,12 +107,12 @@ func show_result_screen(success: bool, result: Dictionary) -> void:
 	"""显示结果界面"""
 	if current_scene:
 		current_scene.queue_free()
-	
+
 	result_scene = load("res://scenes/ResultScreen.tscn").instantiate()
 	result_scene.set_result(success, result)
 	get_tree().current_scene.add_child(result_scene)
 	current_scene = result_scene
-	
+
 	print_debug("[UIManager] Showing result screen: %s" % ("Success" if success else "Failed"))
 
 ## 显示商店
@@ -121,7 +121,7 @@ func show_shop() -> void:
 	shop_scene = load("res://scenes/Shop.tscn").instantiate()
 	get_tree().current_scene.add_child(shop_scene)
 	current_scene = shop_scene
-	
+
 	print_debug("[UIManager] Showing shop")
 
 ## 隐藏商店
@@ -140,7 +140,7 @@ func _initialize_battle_ui() -> void:
 	"""初始化战斗场景的UI元素"""
 	if not battle_scene:
 		return
-	
+
 	# 获取UI元素引用
 	energy_bar = battle_scene.get_node("%EnergyBar")
 	fatigue_bar = battle_scene.get_node("%FatigueBar")
@@ -152,7 +152,7 @@ func _initialize_battle_ui() -> void:
 	distance_label = battle_scene.get_node("%DistanceLabel")
 	elevation_label = battle_scene.get_node("%ElevationLabel")
 	animation_player = battle_scene.get_node("AnimationPlayer")
-	
+
 	# 初始化UI显示
 	_update_all_ui()
 
@@ -161,10 +161,10 @@ func _update_all_ui() -> void:
 	"""更新所有UI元素"""
 	if not battle_scene:
 		return
-	
+
 	# 更新属性条
 	_update_attribute_bars()
-	
+
 	# 更新标签
 	_update_labels()
 
@@ -172,37 +172,39 @@ func _update_all_ui() -> void:
 func _update_attribute_bars() -> void:
 	"""更新属性条"""
 	if energy_bar:
-		energy_bar.value = AttributeSystem.get_energy()
-		energy_bar.max_value = AttributeSystem.get_max_energy()
-	
+		energy_bar.value = AttributeSystem.get_attribute("energy")
+		energy_bar.max_value = AttributeSystem.get_attribute_max("energy")
+
 	if fatigue_bar:
-		fatigue_bar.value = AttributeSystem.get_fatigue()
-		fatigue_bar.max_value = AttributeSystem.get_max_fatigue()
-	
+		fatigue_bar.value = AttributeSystem.get_attribute("fatigue")
+		fatigue_bar.max_value = AttributeSystem.get_attribute_max("fatigue")
+
 	if hunger_bar:
-		hunger_bar.value = AttributeSystem.get_hunger()
-		hunger_bar.max_value = AttributeSystem.get_max_hunger()
-	
+		hunger_bar.value = AttributeSystem.get_attribute("hunger")
+		hunger_bar.max_value = AttributeSystem.get_attribute_max("hunger")
+
 	if thirst_bar:
-		thirst_bar.value = AttributeSystem.get_thirst()
-		thirst_bar.max_value = AttributeSystem.get_max_thirst()
+		thirst_bar.value = AttributeSystem.get_attribute("thirst")
+		thirst_bar.max_value = AttributeSystem.get_attribute_max("thirst")
 
 ## 更新标签
 func _update_labels() -> void:
 	"""更新标签文本"""
 	if heart_rate_label:
-		heart_rate_label.text = "心率: %d BPM" % AttributeSystem.get_heart_rate()
-	
+		heart_rate_label.text = "心率: %d BPM" % int(AttributeSystem.get_attribute("heart_rate"))
+
 	if combo_label:
 		combo_label.text = "连击: %d" % ComboSystem.get_current_combo()
-	
+
 	if environmental_value_label:
 		environmental_value_label.text = "环保值: %d" % EconomySystem.get_environmental_value()
-	
+
 	if distance_label:
 		var layer_info = GameManager.get_current_layer_info()
-		distance_label.text = "徒步: %.1f / %.1f km" % [layer_info["distance_so_far"], layer_info["total_distance"]]
-	
+		var distance_so_far = layer_info["distance_so_far"]
+		var total_distance = layer_info["total_distance"]
+		distance_label.text = "徒步: %.1f / %.1f km" % [distance_so_far, total_distance]
+
 	if elevation_label:
 		elevation_label.text = "爬升: %.0f / %.0f m" % [
 			EconomySystem.get_total_elevation_gain(),
@@ -214,8 +216,10 @@ func _update_labels() -> void:
 # ============================================================
 
 ## 显示连击效果
-func show_combo_effect(combo_count: int) -> void:
+func show_combo_effect(_combo_count: int) -> void:
 	"""显示连击视觉效果"""
+	if _combo_count < 0:
+		return
 	if animation_player and animation_player.has_animation("combo_effect"):
 		animation_player.play("combo_effect")
 
@@ -239,11 +243,11 @@ func play_traverse_animation(card_data: Dictionary) -> void:
 func show_confirmation_dialog(message: String, callback: Callable) -> void:
 	"""显示确认对话框"""
 	confirmation_callback = callback
-	
+
 	var dialog = AcceptDialog.new()
 	dialog.dialog_text = message
 	dialog.confirmed.connect(_on_confirmation_dialog_confirmed)
-	
+
 	battle_scene.add_child(dialog)
 	dialog.popup_centered()
 
@@ -258,7 +262,7 @@ func show_warning_dialog(message: String) -> void:
 	"""显示警告对话框"""
 	var dialog = AcceptDialog.new()
 	dialog.dialog_text = message
-	
+
 	battle_scene.add_child(dialog)
 	dialog.popup_centered()
 
@@ -267,8 +271,14 @@ func show_warning_dialog(message: String) -> void:
 # ============================================================
 
 ## 属性变化回调
-func _on_attribute_changed(attribute_name: String, current_value: float, max_value: float) -> void:
+func _on_attribute_changed(
+	_attribute_name: String,
+	_current_value: float,
+	_max_value: float
+) -> void:
 	"""属性变化回调"""
+	if _attribute_name.is_empty() and _current_value < 0.0 and _max_value < 0.0:
+		return
 	_update_attribute_bars()
 
 ## 连击变化回调
@@ -284,6 +294,8 @@ func _on_environmental_value_changed(amount: int) -> void:
 		environmental_value_label.text = "环保值: %d" % amount
 
 ## 层级变化回调
-func _on_level_changed(level_index: int) -> void:
+func _on_level_changed(_level_index: int) -> void:
 	"""层级变化回调"""
+	if _level_index < 0:
+		return
 	_update_labels()

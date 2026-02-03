@@ -33,6 +33,7 @@ SteamManager="*res://autoloads/SteamManager.gd"
 TerrainSystem="*res://autoloads/TerrainSystem.gd"
 SupplySystem="*res://autoloads/SupplySystem.gd"
 FatigueSystem="*res://autoloads/FatigueSystem.gd"
+ConfigManager="*res://autoloads/ConfigManager.gd"
 
 [display]
 
@@ -44,6 +45,10 @@ window/stretch/mode="canvas_items"
 [filesystem]
 
 import/blender/enabled=false
+
+[gui]
+
+theme/default_theme_scale=2.0
 
 [input]
 

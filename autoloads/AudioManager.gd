@@ -47,7 +47,7 @@ func _setup_audio_players() -> void:
 	bgm_player.bus = "BGM"
 	bgm_player.volume_db = linear_to_db(bgm_volume)
 	add_child(bgm_player)
-	
+
 	sfx_player = AudioStreamPlayer.new()
 	sfx_player.bus = "SFX"
 	sfx_player.volume_db = linear_to_db(sfx_volume)
@@ -60,13 +60,13 @@ func _setup_audio_buses() -> void:
 	AudioServer.add_bus(idx)
 	AudioServer.set_bus_name(idx, "Master")
 	master_bus = idx
-	
+
 	idx = AudioServer.bus_count
 	AudioServer.add_bus(idx)
 	AudioServer.set_bus_name(idx, "BGM")
 	AudioServer.set_bus_volume_db(idx, linear_to_db(bgm_volume))
 	bgm_bus = idx
-	
+
 	idx = AudioServer.bus_count
 	AudioServer.add_bus(idx)
 	AudioServer.set_bus_name(idx, "SFX")
@@ -83,10 +83,10 @@ func _load_audio_resources() -> void:
 		"result": "res://assets/audio/bgm/result.ogg",
 		"shop": "res://assets/audio/bgm/shop.ogg"
 	}
-	
+
 	for bgm_name in bgm_paths:
 		bgm_resources[bgm_name] = _safe_load_audio(bgm_paths[bgm_name])
-	
+
 	# SFX资源
 	var sfx_paths = {
 		"card_click": "res://assets/audio/sfx/card_click.ogg",
@@ -101,7 +101,7 @@ func _load_audio_resources() -> void:
 		"game_over": "res://assets/audio/sfx/game_over.ogg",
 		"victory": "res://assets/audio/sfx/victory.ogg"
 	}
-	
+
 	for sfx_name in sfx_paths:
 		sfx_resources[sfx_name] = _safe_load_audio(sfx_paths[sfx_name])
 
@@ -110,20 +110,19 @@ func _safe_load_audio(path: String) -> AudioStream:
 	"""安全加载音频，如果文件不存在则返回null"""
 	if FileAccess.file_exists(path):
 		return load(path)
-	else:
-		print_debug("[AudioManager] Resource not found: %s" % path)
-		return null
+	print_debug("[AudioManager] Resource not found: %s" % path)
+	return null
 
 ## 加载音量设置
 func _load_volume_settings() -> void:
 	"""从存档加载音量设置"""
 	var player_data = SaveManager.get_player_data()
 	var settings = player_data.get("settings", {})
-	
+
 	master_volume = settings.get("master_volume", 1.0)
 	bgm_volume = settings.get("bgm_volume", 0.8)
 	sfx_volume = settings.get("sfx_volume", 1.0)
-	
+
 	_update_bus_volumes()
 
 # ============================================================
@@ -135,13 +134,13 @@ func play_bgm(bgm_name: String, fade_in: bool = true) -> void:
 	"""播放背景音乐"""
 	if bgm_name == current_bgm_name and bgm_player.playing:
 		return
-	
+
 	if not bgm_resources.has(bgm_name):
 		push_error("[AudioManager] BGM not found: %s" % bgm_name)
 		return
-	
+
 	bgm_player.stream = bgm_resources[bgm_name]
-	
+
 	if fade_in:
 		bgm_player.volume_db = -80.0
 		bgm_player.play()
@@ -149,9 +148,9 @@ func play_bgm(bgm_name: String, fade_in: bool = true) -> void:
 	else:
 		bgm_player.volume_db = linear_to_db(bgm_volume * master_volume)
 		bgm_player.play()
-	
+
 	current_bgm_name = bgm_name
-	
+
 	print_debug("[AudioManager] Playing BGM: %s" % bgm_name)
 
 ## 停止BGM
@@ -196,7 +195,7 @@ func play_sfx(sfx_name: String, pitch_scale: float = 1.0) -> void:
 	if not sfx_resources.has(sfx_name):
 		push_error("[AudioManager] SFX not found: %s" % sfx_name)
 		return
-	
+
 	# 如果有音效正在播放，创建新的播放器
 	if sfx_player.playing:
 		var new_player = AudioStreamPlayer.new()
@@ -255,11 +254,11 @@ func _save_volume_settings() -> void:
 	"""保存音量设置到存档"""
 	var player_data = SaveManager.get_player_data()
 	var settings = player_data.get("settings", {})
-	
+
 	settings["master_volume"] = master_volume
 	settings["bgm_volume"] = bgm_volume
 	settings["sfx_volume"] = sfx_volume
-	
+
 	player_data["settings"] = settings
 	SaveManager.save_player_data()
 
@@ -283,23 +282,23 @@ func get_sfx_volume() -> float:
 # ============================================================
 
 ## 播放卡牌点击音效
-func play_card_click() -> void:
+func _play_card_click() -> void:
 	"""播放卡牌点击音效"""
 	play_sfx("card_click")
 
 ## 播放卡牌穿越音效
-func play_card_cross() -> void:
+func _play_card_cross() -> void:
 	"""播放卡牌穿越音效"""
 	play_sfx("card_cross")
 
 ## 播放连击音效
-func play_combo(combo_count: int) -> void:
+func _play_combo(combo_count: int) -> void:
 	"""播放连击音效（根据连击数调整音调）"""
 	var pitch = 1.0 + (combo_count * 0.1)
 	play_sfx("combo", pitch)
 
 ## 播放地形音效
-func play_terrain_sound(terrain_type: String) -> void:
+func _play_terrain_sound(terrain_type: String) -> void:
 	"""播放地形音效"""
 	match terrain_type:
 		"flat":
@@ -310,26 +309,26 @@ func play_terrain_sound(terrain_type: String) -> void:
 			play_sfx("terrain_cliff")
 
 ## 播放休息音效
-func play_rest() -> void:
+func _play_rest() -> void:
 	"""播放休息音效"""
 	play_sfx("rest")
 
 ## 播放商店购买音效
-func play_shop_buy() -> void:
+func _play_shop_buy() -> void:
 	"""播放商店购买音效"""
 	play_sfx("shop_buy")
 
 ## 播放错误音效
-func play_error() -> void:
+func _play_error() -> void:
 	"""播放错误音效"""
 	play_sfx("error")
 
 ## 播放游戏结束音效
-func play_game_over() -> void:
+func _play_game_over() -> void:
 	"""播放游戏结束音效"""
 	play_sfx("game_over")
 
 ## 播放胜利音效
-func play_victory() -> void:
+func _play_victory() -> void:
 	"""播放胜利音效"""
 	play_sfx("victory")

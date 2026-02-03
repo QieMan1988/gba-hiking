@@ -64,26 +64,26 @@ func initialize() -> void:
 	"""初始化经济系统（游戏开始时调用）"""
 	# 从存档加载玩家数据
 	player_data = SaveManager.get_player_data()
-	
+
 	# 重置局内数据
 	current_environmental_value = 0
 	current_hiking_points = 0
 	current_elevation_gain = 0.0
-	
+
 	# 重置补给需求
 	required_supplies = {
 		"water": 0,
 		"sports_drink": 0,
 		"chocolate": 0
 	}
-	
+
 	# 重置已消耗补给
 	consumed_supplies = {
 		"water": 0,
 		"sports_drink": 0,
 		"chocolate": 0
 	}
-	
+
 	print_debug("[EconomySystem] Economy initialized")
 
 ## 初始化商店
@@ -183,7 +183,7 @@ func spend_hiking_points(amount: int) -> bool:
 	"""支付徒步数，返回是否成功"""
 	if get_total_hiking_points() < amount:
 		return false
-	
+
 	player_data["hiking_points"] = get_total_hiking_points() - amount
 	currency_changed.emit("hiking_points", get_total_hiking_points())
 	return true
@@ -193,7 +193,7 @@ func spend_elevation_gain(amount: float) -> bool:
 	"""支付累积爬升，返回是否成功"""
 	if get_total_elevation_gain() < amount:
 		return false
-	
+
 	player_data["elevation_gain"] = get_total_elevation_gain() - amount
 	currency_changed.emit("elevation_gain", int(get_total_elevation_gain()))
 	return true
@@ -220,7 +220,7 @@ func spend_environmental_value(amount: int) -> bool:
 	if current_environmental_value < amount:
 		insufficient_environmental_value.emit(amount, current_environmental_value)
 		return false
-	
+
 	current_environmental_value -= amount
 	environmental_value_changed.emit(current_environmental_value)
 	return true
@@ -248,25 +248,25 @@ func purchase_item(item_id: String) -> bool:
 		if item["id"] == item_id:
 			item_data = item
 			break
-	
+
 	if item_data == null:
 		push_error("[EconomySystem] Item not found: %s" % item_id)
 		return false
-	
+
 	# 检查环保值
 	if not spend_environmental_value(item_data["price"]):
 		return false
-	
+
 	# 应用效果
 	_apply_item_effects(item_data["effects"])
-	
+
 	# 记录购买历史
 	purchase_history.append({
 		"item_id": item_id,
 		"price": item_data["price"],
 		"timestamp": Time.get_unix_time_from_system()
 	})
-	
+
 	print_debug("[EconomySystem] Purchased item: %s" % item_id)
 	return true
 
@@ -275,18 +275,18 @@ func _apply_item_effects(effects: Dictionary) -> void:
 	"""应用物品效果到属性系统"""
 	for effect_name in effects:
 		var value = effects[effect_name]
-		
+
 		match effect_name:
 			"thirst":
-				AttributeSystem.recover_thirst(float(value))
+				AttributeSystem.apply_attribute_delta("thirst", -float(value))
 			"hunger":
-				AttributeSystem.recover_hunger(float(value))
+				AttributeSystem.apply_attribute_delta("hunger", -float(value))
 			"energy":
-				AttributeSystem.recover_energy(float(value))
+				AttributeSystem.apply_attribute_delta("energy", float(value))
 			"fatigue":
-				AttributeSystem.reduce_fatigue(float(abs(value)) if value < 0 else -float(value))
+				AttributeSystem.apply_attribute_delta("fatigue", float(value))
 			"heart_rate":
-				AttributeSystem.decrease_heart_rate(int(abs(value)) if value < 0 else -int(value))
+				AttributeSystem.apply_attribute_delta("heart_rate", float(value))
 
 # ============================================================
 # 补给系统
@@ -299,7 +299,7 @@ func update_supply_requirements(distance: float) -> void:
 	required_supplies["water"] = int(distance / 5.0)
 	required_supplies["sports_drink"] = int(distance / 10.0)
 	required_supplies["chocolate"] = int(distance / 10.0)
-	
+
 	print_debug("[EconomySystem] Supply requirements updated: %s" % required_supplies)
 
 ## 检查补给是否充足
@@ -339,25 +339,25 @@ func get_supply_warning() -> String:
 	"""获取补给不足警告信息"""
 	var supply_status = check_supply_adequacy()
 	var warnings = []
-	
+
 	if not supply_status["water"]["adequate"]:
 		warnings.append("水不足（需要%d瓶，已消耗%d瓶）" % [
 			supply_status["water"]["required"],
 			supply_status["water"]["consumed"]
 		])
-	
+
 	if not supply_status["sports_drink"]["adequate"]:
 		warnings.append("运动饮料不足（需要%d瓶，已消耗%d瓶）" % [
 			supply_status["sports_drink"]["required"],
 			supply_status["sports_drink"]["consumed"]
 		])
-	
+
 	if not supply_status["chocolate"]["adequate"]:
 		warnings.append("巧克力不足（需要%d次，已消耗%d次）" % [
 			supply_status["chocolate"]["required"],
 			supply_status["chocolate"]["consumed"]
 		])
-	
+
 	return "\n".join(warnings)
 
 # ============================================================

@@ -5,8 +5,8 @@
 # 创建日期：2026年2月1日
 # ============================================================
 
-extends Control
 class_name MainMenu
+extends Control
 
 func _ready() -> void:
 	pass

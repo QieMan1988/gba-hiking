@@ -76,25 +76,28 @@ func _ready() -> void:
 ## 加载游戏配置
 func load_game_configs() -> void:
 	"""加载所有游戏配置文件"""
-	var config_loader = ConfigLoader.new()
-	
-	# 加载游戏配置
-	game_config = config_loader.load_config("res://config/game_config.json")
+	var config_manager = get_node_or_null("/root/ConfigManager")
+	if config_manager != null:
+		game_config = config_manager.get_config("game_config")
+		balance_config = config_manager.get_config("balance_config")
+		card_database = config_manager.get_config("card_database")
+	else:
+		var config_loader = ConfigLoader.new()
+		game_config = config_loader.load_config("res://config/game_config.json")
+		balance_config = config_loader.load_config("res://config/balance_config.json")
+		card_database = config_loader.load_config("res://config/card_database.json")
+
 	if game_config.is_empty():
 		push_error("[GameManager] Failed to load game_config.json")
 		_set_default_game_config()
-	
-	# 加载平衡配置
-	balance_config = config_loader.load_config("res://config/balance_config.json")
+
 	if balance_config.is_empty():
 		push_error("[GameManager] Failed to load balance_config.json")
 		_set_default_balance_config()
-	
-	# 加载卡牌数据库
-	card_database = config_loader.load_config("res://config/card_database.json")
+
 	if card_database.is_empty():
 		push_error("[GameManager] Failed to load card_database.json")
-	
+
 	print_debug("[GameManager] Game configurations loaded")
 
 ## 设置默认游戏配置（配置文件不存在时使用）
@@ -142,7 +145,7 @@ func _set_default_balance_config() -> void:
 
 ## 初始化信号连接
 func _initialize_signals() -> void:
-	pass
+	TerrainSystem.knee_damage_taken.connect(_on_knee_damage_taken)
 
 # ============================================================
 # 游戏流程控制
@@ -152,42 +155,49 @@ func _initialize_signals() -> void:
 func start_game(level_config: Dictionary) -> void:
 	"""开始新游戏"""
 	print_debug("[GameManager] Starting game with level: %s" % level_config.get("name", "Unknown"))
-	
+
 	# 设置关卡配置
 	current_level_config = level_config
 	current_level_index = level_config.get("level_id", 0)
 	total_layers = level_config.get("layers", 5)
-	
+
 	# 初始化层级
 	current_layer_index = 0
-	
+	layer_distance_per = level_config.get(
+		"layer_distance_per",
+		game_config.get("layer_distance_per", layer_distance_per)
+	)
+
 	# 生成地形序列
 	_generate_terrain_sequence()
-	
+	if terrain_history.size() > 0:
+		current_terrain_type = terrain_history[0]
+	_apply_terrain_effects(current_terrain_type)
+
 	# 初始化天气
 	_generate_initial_weather()
-	
+
 	# 初始化属性系统
 	AttributeSystem.initialize()
-	
+
 	# 初始化卡牌系统
 	CardSystem.initialize()
-	
+
 	# 初始化经济系统
 	EconomySystem.initialize()
-	
+
 	# 初始化连击系统
 	ComboSystem.initialize()
-	
+
 	# 初始化UI
 	UIManager.show_battle_scene()
-	
+
 	# 改变游戏状态
 	change_state(GameState.PLAYING)
-	
+
 	# 发送信号
 	game_started.emit(level_config)
-	
+
 	print_debug("[GameManager] Game started")
 
 ## 暂停游戏
@@ -212,19 +222,19 @@ func resume_game() -> void:
 func complete_level(success: bool, result: Dictionary) -> void:
 	"""完成关卡（成功或失败）"""
 	print_debug("[GameManager] Level completed: %s" % success)
-	
+
 	# 统计游戏数据
 	_update_game_statistics(result)
-	
+
 	# 改变游戏状态
 	if success:
 		change_state(GameState.COMPLETED)
 	else:
 		change_state(GameState.GAME_OVER)
-	
+
 	# 发送信号
 	game_completed.emit(success, result)
-	
+
 	# 显示结果界面
 	UIManager.show_result_screen(success, result)
 
@@ -249,117 +259,131 @@ func return_to_menu() -> void:
 func _generate_terrain_sequence() -> void:
 	"""生成关卡的地形序列（上坡下坡）"""
 	terrain_history.clear()
-	
+
 	var target_elevation_gain: float = current_level_config.get("elevation_gain", 0.0)
 	var layers: int = current_level_config.get("layers", 5)
 	var avg_gain_per_layer: float = target_elevation_gain / float(layers)
-	
+
 	for i in range(layers):
 		var terrain_type: String = _determine_terrain_type(i, layers, avg_gain_per_layer)
 		terrain_history.append(terrain_type)
-	
+
 	print_debug("[GameManager] Terrain sequence generated: %s" % terrain_history)
 
 ## 确定地形类型
-func _determine_terrain_type(layer_index: int, total_layers: int, avg_gain_per_layer: float) -> String:
+func _determine_terrain_type(
+	layer_index: int,
+	layer_count: int,
+	avg_gain_per_layer: float
+) -> String:
 	"""确定特定层级的地形类型"""
 	var rand = randf()
-	
+
 	# 最后一层总是上坡到山顶
-	if layer_index == total_layers - 1:
+	if layer_index == layer_count - 1:
 		if avg_gain_per_layer < 100:
-			return "gentle_up"
-		else:
-			return "steep_up"
-	
+			return TerrainSystem.TERRAIN_GENTLE_UP
+		return TerrainSystem.TERRAIN_STEEP_UP
+
 	# 第一层通常是平坦道路
 	if layer_index == 0:
-		return "flat"
-	
+		return TerrainSystem.TERRAIN_FLAT
+
 	# 根据平均爬升确定地形
 	var weights = balance_config.get("terrain_weights", {})
-	
+	if weights.is_empty():
+		return TerrainSystem.TERRAIN_FLAT
+
 	# 如果平均爬升很高，增加上坡权重
 	if avg_gain_per_layer > 200:
-		weights["gentle_up"] *= 1.5
-		weights["steep_up"] *= 2.0
-		weights["flat"] *= 0.7
-		weights["gentle_down"] *= 0.5
-		weights["steep_down"] *= 0.3
+		if weights.has(TerrainSystem.TERRAIN_GENTLE_UP): weights[TerrainSystem.TERRAIN_GENTLE_UP] *= 1.5
+		if weights.has(TerrainSystem.TERRAIN_STEEP_UP): weights[TerrainSystem.TERRAIN_STEEP_UP] *= 2.0
+		if weights.has(TerrainSystem.TERRAIN_STAIRS_UP): weights[TerrainSystem.TERRAIN_STAIRS_UP] *= 1.8
+		if weights.has(TerrainSystem.TERRAIN_FLAT): weights[TerrainSystem.TERRAIN_FLAT] *= 0.7
+		if weights.has(TerrainSystem.TERRAIN_GENTLE_DOWN): weights[TerrainSystem.TERRAIN_GENTLE_DOWN] *= 0.5
+		if weights.has(TerrainSystem.TERRAIN_STEEP_DOWN): weights[TerrainSystem.TERRAIN_STEEP_DOWN] *= 0.3
 	elif avg_gain_per_layer < 50:
-		weights["gentle_up"] *= 0.7
-		weights["steep_up"] *= 0.3
-		weights["flat"] *= 1.5
-		weights["gentle_down"] *= 1.2
-		weights["steep_down"] *= 0.8
-	
+		if weights.has(TerrainSystem.TERRAIN_GENTLE_UP): weights[TerrainSystem.TERRAIN_GENTLE_UP] *= 0.7
+		if weights.has(TerrainSystem.TERRAIN_STEEP_UP): weights[TerrainSystem.TERRAIN_STEEP_UP] *= 0.3
+		if weights.has(TerrainSystem.TERRAIN_STAIRS_UP): weights[TerrainSystem.TERRAIN_STAIRS_UP] *= 0.4
+		if weights.has(TerrainSystem.TERRAIN_FLAT): weights[TerrainSystem.TERRAIN_FLAT] *= 1.5
+		if weights.has(TerrainSystem.TERRAIN_GENTLE_DOWN): weights[TerrainSystem.TERRAIN_GENTLE_DOWN] *= 1.2
+		if weights.has(TerrainSystem.TERRAIN_STEEP_DOWN): weights[TerrainSystem.TERRAIN_STEEP_DOWN] *= 0.8
+
 	# 根据权重随机选择
 	var total_weight = 0.0
 	for weight in weights.values():
 		total_weight += weight
-	
+
 	var random_value = rand * total_weight
 	var cumulative_weight = 0.0
-	
+
 	for terrain_type in weights:
 		cumulative_weight += weights[terrain_type]
 		if random_value <= cumulative_weight:
 			return terrain_type
-	
+
 	return "flat"
 
 ## 生成初始天气
 func _generate_initial_weather() -> void:
 	"""生成关卡初始天气"""
 	var weights = balance_config.get("weather_weights", {})
-	
+
 	var total_weight = 0.0
 	for weight in weights.values():
 		total_weight += weight
-	
+
 	var random_value = randf() * total_weight
 	var cumulative_weight = 0.0
-	
+
 	for weather_type in weights:
 		cumulative_weight += weights[weather_type]
 		if random_value <= cumulative_weight:
 			current_weather = weather_type
 			break
-	
+
 	weather_duration = randi_range(3, 6)
-	
-	print_debug("[GameManager] Initial weather: %s (duration: %d)" % [current_weather, weather_duration])
+	var initial_weather_message = "[GameManager] Initial weather: %s (duration: %d)" % [
+		current_weather,
+		weather_duration
+	]
+	print_debug(initial_weather_message)
 
 ## 更新天气
 func update_weather() -> void:
 	"""每回合更新天气"""
 	weather_duration -= 1
-	
+
 	if weather_duration <= 0:
 		var weights = balance_config.get("weather_weights", {})
-		
+
 		# 相同天气有50%概率延续
 		if randf() < 0.5:
 			weather_duration = randi_range(3, 6)
 			return
-		
+
 		# 否则随机更换
 		var total_weight = 0.0
 		for weight in weights.values():
 			total_weight += weight
-		
+
 		var random_value = randf() * total_weight
 		var cumulative_weight = 0.0
-		
+
 		for weather_type in weights:
 			cumulative_weight += weights[weather_type]
 			if random_value <= cumulative_weight:
 				current_weather = weather_type
 				break
-		
+
 		weather_duration = randi_range(3, 6)
-	
-	print_debug("[GameManager] Weather updated: %s (duration: %d)" % [current_weather, weather_duration])
+
+	var weather_message = "[GameManager] Weather updated: %s (duration: %d)" % [
+		current_weather,
+		weather_duration
+	]
+	print_debug(weather_message)
 
 ## 进入下一层
 func advance_to_next_layer() -> void:
@@ -367,20 +391,32 @@ func advance_to_next_layer() -> void:
 	if current_layer_index < total_layers - 1:
 		current_layer_index += 1
 		current_terrain_type = terrain_history[current_layer_index]
-		
+		_apply_terrain_effects(current_terrain_type)
+
 		# 检查是否到达山顶
 		if current_layer_index == total_layers - 1:
 			complete_level(true, _get_level_result())
 		else:
 			level_changed.emit(current_layer_index)
-		
+
 		print_debug("[GameManager] Advanced to layer %d/%d" % [current_layer_index, total_layers])
+
+func _apply_terrain_effects(terrain_type: String) -> void:
+	TerrainSystem.set_current_terrain(terrain_type)
+	var distance: float = layer_distance_per
+	var elevation_gain: float = TerrainSystem.get_elevation_gain(terrain_type, distance)
+	if elevation_gain > 0.0:
+		EconomySystem.add_elevation_gain(elevation_gain)
+	TerrainSystem.calculate_knee_damage(terrain_type, distance)
+
+func _on_knee_damage_taken(_amount: float, current_health: float) -> void:
+	AttributeSystem.set_knee_injury(current_health <= 30.0)
 
 ## 获取当前层级信息
 func get_current_layer_info() -> Dictionary:
 	"""获取当前层级的详细信息"""
 	var layer_index = current_layer_index
-	
+
 	return {
 		"layer_index": layer_index,
 		"total_layers": total_layers,
@@ -402,7 +438,11 @@ func change_state(new_state: GameState) -> void:
 		var old_state = current_state
 		current_state = new_state
 		game_state_changed.emit(new_state)
-		print_debug("[GameManager] State changed: %s -> %s" % [GameState.keys()[old_state], GameState.keys()[new_state]])
+		var state_message = "[GameManager] State changed: %s -> %s" % [
+			GameState.keys()[old_state],
+			GameState.keys()[new_state]
+		]
+		print_debug(state_message)
 
 ## 获取当前状态
 func get_current_state() -> GameState:
@@ -424,38 +464,49 @@ func _update_game_statistics(result: Dictionary) -> void:
 	# 更新总徒步距离
 	var distance = result.get("distance", 0.0)
 	total_hiking_distance += distance
-	
+
 	# 更新总累积爬升
 	var elevation_gain = result.get("elevation_gain", 0.0)
 	total_elevation_gain += elevation_gain
-	
+
 	# 更新总徒步数
 	var hiking_points = result.get("hiking_points", 0)
 	total_hiking_points += hiking_points
-	
+
 	# 更新总环保值
 	var env_value = result.get("environmental_value", 0)
 	total_environmental_value += env_value
-	
+
 	# 更新游玩次数
 	current_play_count += 1
-	
+
 	# 保存统计数据
 	SaveManager.save_player_data()
-	
-	print_debug("[GameManager] Game statistics updated: distance=%.2fkm, elevation=%.0fm, points=%d, env=%d" % [
-		total_hiking_distance, total_elevation_gain, total_hiking_points, total_environmental_value
-	])
+	var statistics_message = (
+		"[GameManager] Game statistics updated: distance=%.2fkm, "
+		+ "elevation=%.0fm, points=%d, env=%d"
+	) % [
+		total_hiking_distance,
+		total_elevation_gain,
+		total_hiking_points,
+		total_environmental_value
+	]
+	print_debug(statistics_message)
 
 ## 获取关卡结果
 func _get_level_result() -> Dictionary:
 	"""获取关卡结果数据"""
+	var hiking_points = int(
+		current_level_index
+		* layer_distance_per
+		* game_config.get("hiking_points_per_km", 2000)
+	)
 	return {
 		"level_id": current_level_index,
 		"success": true,
 		"distance": current_level_index * layer_distance_per,
 		"elevation_gain": _calculate_total_elevation_gain(),
-		"hiking_points": int(current_level_index * layer_distance_per * game_config.get("hiking_points_per_km", 2000)),
+		"hiking_points": hiking_points,
 		"environmental_value": EconomySystem.get_environmental_value(),
 		"layers_completed": current_layer_index + 1,
 		"total_layers": total_layers,
@@ -466,7 +517,7 @@ func _get_level_result() -> Dictionary:
 func _calculate_total_elevation_gain() -> float:
 	"""计算当前关卡的总累积爬升"""
 	var total_gain = 0.0
-	
+
 	for terrain_type in terrain_history:
 		if terrain_type in ["gentle_up", "steep_up", "cliff"]:
 			if terrain_type == "gentle_up":
@@ -475,7 +526,7 @@ func _calculate_total_elevation_gain() -> float:
 				total_gain += 150.0
 			elif terrain_type == "cliff":
 				total_gain += 300.0
-	
+
 	return total_gain
 
 ## 获取游戏统计数据
@@ -532,7 +583,7 @@ func calculate_hiking_points_reward(distance: float, elevation_gain: float) -> i
 # 进程
 # ============================================================
 
-func _process(delta: float) -> void:
+func _process(_delta: float) -> void:
 	frame_count += 1
 	if frame_count % 60 == 0:
 		# 每秒更新一次统计数据
@@ -546,22 +597,22 @@ func _notification(what: int) -> void:
 
 ## 配置加载器（内部类）
 class ConfigLoader:
-	
+
 	func load_config(file_path: String) -> Dictionary:
 		"""加载配置文件"""
 		if not FileAccess.file_exists(file_path):
 			print_debug("[ConfigLoader] Config file not found: %s" % file_path)
 			return {}
-		
+
 		var file = FileAccess.open(file_path, FileAccess.READ)
 		var json_text = file.get_as_text()
 		file.close()
-		
+
 		var json = JSON.new()
 		var error = json.parse(json_text)
-		
+
 		if error != OK:
 			print_debug("[ConfigLoader] JSON parse error: %s" % json.get_error_message())
 			return {}
-		
+
 		return json.data

@@ -165,6 +165,16 @@
       "gain_rate": 1.0
     }
   },
+  "terrain_weights": {
+    "flat": 1.0,
+    "gentle_up": 0.8,
+    "steep_up": 0.5,
+    "gentle_down": 0.8,
+    "steep_down": 0.5,
+    "stairs_up": 0.6,
+    "stairs_down": 0.6,
+    "cliff": 0.1
+  },
   "difficulty_progression": {
     "play_count_modifier": 0.01,
     "max_modifier": 1.5,
